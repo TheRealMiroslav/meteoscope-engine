@@ -1,1 +1,0 @@
-# UPP_Semestralka_1
