@@ -1,6 +1,20 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.20)
 project(UPP_Semestralka_1)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(UPP_Semestralka_1 main.cpp)
+# Ruční vypsání souborů - máš nad tím 100% kontrolu
+add_executable(UPP_Semestralka_1
+        main.cpp
+        io/CsvParser.cpp
+        io/CsvWriter.cpp
+        output/ColorMapper.cpp
+        output/CoordMapper.cpp
+        output/SvgWriter.cpp
+        processing/Aggregator.cpp
+        processing/AnomalyDetector.cpp
+        processing/Filter.cpp
+)
+
+find_package(OpenMP REQUIRED)
+target_link_libraries(UPP_Semestralka_1 PUBLIC OpenMP::OpenMP_CXX)
