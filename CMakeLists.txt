@@ -14,6 +14,10 @@ add_executable(UPP_Semestralka_1
         processing/Aggregator.cpp
         processing/AnomalyDetector.cpp
         processing/Filter.cpp
+        data/Station.h
+        data/Measurement.h
+        io/CsvWriter.h
+        processing/Filter.h
 )
 
 find_package(OpenMP REQUIRED)
