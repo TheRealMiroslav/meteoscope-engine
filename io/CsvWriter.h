@@ -1,6 +1,9 @@
 #pragma once
 #include <string>
+#include <vector>
 
-void writeAnomaliesCsv(anomalies, std::string path);
+#include "../data/Anomaly.h"
 
-void writeSvgMaps(stations, averages, globalMin, globalMax, mapSvgPath, outputDir);
+void writeAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::string &path);
+
+//void writeSvgMaps(stations, averages, globalMin, globalMax, mapSvgPath, outputDir);

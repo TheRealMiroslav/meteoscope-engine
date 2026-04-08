@@ -18,6 +18,13 @@ add_executable(UPP_Semestralka_1
         data/Measurement.h
         io/CsvWriter.h
         processing/Filter.h
+        processing/Aggregator.h
+        data/Anomaly.h
+        processing/AnomalyDetector.h
+        output/SvgWriter.h
+        utils/Config.h
+        output/CoordMapper.h
+        output/ColorMapper.h
 )
 
 find_package(OpenMP REQUIRED)
