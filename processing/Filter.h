@@ -8,3 +8,7 @@
 std::vector<int> filterMinYears(const std::map<int, std::map<int, std::vector<Measurement>>>& groupedMeasurements, int minYears);
 
 std::vector<int> filterMinReadings(const std::map<int, std::map<int, std::vector<Measurement>>>& groupedMeasurements, int minPerYear);
+
+std::vector<int> filterMinYearsParallel(const std::map<int, std::map<int, std::vector<Measurement>>>& groupedMeasurements, int minYears);
+
+std::vector<int> filterMinReadingsParallel(const std::map<int, std::map<int, std::vector<Measurement>>>& groupedMeasurements, int minPerYear);

@@ -1,19 +1,22 @@
 #include "SvgWriter.h"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <execution>
+#include <unordered_map>
 
 #include "ColorMapper.h"
 #include "CoordMapper.h"
 #include "../utils/Config.h"
 
 void writeSvgMaps(const std::vector<Station> &stations,
-                  const std::map<int, std::map<int, std::map<int, double>> > &averages, double globalMin,
+                  const std::map<int, std::map<int, std::map<int, double> > > &averages, double globalMin,
                   double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
     // 1. názvy měsíců
     const std::string monthNames[] = {
-        "leden", "únor", "březen", "duben", "květen", "červen",
-        "červenec", "srpen", "září", "říjen", "listopad", "prosinec"
+        "1_leden", "2_unor", "3_brezen", "4_duben", "5_kveten", "6_cerven",
+        "7_cervenec", "8_srpen", "9_zari", "10_rijen", "11_listopad", "12_prosinec"
     };
 
     // 2. načti czmap.svg
@@ -39,7 +42,7 @@ void writeSvgMaps(const std::vector<Station> &stations,
         std::string circle = "";
 
         // 3b. for každá stanice
-        for (const auto &station : stations) {
+        for (const auto &station: stations) {
             // - getStationMonthAverage
             double avgTemp = getStationMonthAverage(averages, station.id, month);
 
@@ -53,9 +56,9 @@ void writeSvgMaps(const std::vector<Station> &stations,
             // <circle cx="600" cy="300" r="8" fill="rgb(255, 128, 0)"/>
             std::ostringstream circleStream;
             circleStream << "<circle cx=\"" << x
-                         << "\" cy=\"" << y
-                         << "\" r=\"" << Config::STATION_RADIUS
-                         << "\" fill=\"rgb(" << color.r << "," << color.g << "," << color.b << ")\"/>\n";
+                    << "\" cy=\"" << y
+                    << "\" r=\"" << Config::STATION_RADIUS
+                    << "\" fill=\"rgb(" << color.r << "," << color.g << "," << color.b << ")\"/>\n";
             circle += circleStream.str();
         }
 
@@ -72,15 +75,18 @@ void writeSvgMaps(const std::vector<Station> &stations,
 }
 
 double getStationMonthAverage(
-    const std::map<int, std::map<int, std::map<int, double>>> &averages,
+    const std::map<int, std::map<int, std::map<int, double> > > &averages,
     const int stationId, const int month) {
+    if (!averages.contains(stationId)) {
+        return 0.0;
+    }
 
     double sum = 0;
     int count = 0;
 
-    for (auto const& [year, monthMap] : averages.at(stationId)) {
-
-        if (monthMap.count(month) > 0) {
+    // 2. Teď je bezpečné použít .at() nebo raději iterátor z find
+    for (auto const &[year, monthMap]: averages.at(stationId)) {
+        if (monthMap.contains(month)) {
             sum += monthMap.at(month);
             count++;
         }
@@ -88,4 +94,71 @@ double getStationMonthAverage(
 
     if (count == 0) return 0.0;
     return sum / count;
+}
+
+void writeSvgMapsParallel(const std::vector<Station> &stations,
+                          const std::map<int, std::map<int, std::map<int, double> > > &averages, double globalMin,
+                          double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
+    // 1. názvy měsíců
+    const std::string monthNames[] = {
+        "1_leden", "2_unor", "3_brezen", "4_duben", "5_kveten", "6_cerven",
+        "7_cervenec", "8_srpen", "9_zari", "10_rijen", "11_listopad", "12_prosinec"
+    };
+
+    // 2. načti czmap.svg
+    std::string svgContent;
+    std::ifstream fileStream(mapSvgPath);
+
+    if (fileStream.is_open()) {
+        std::stringstream buffer;
+        buffer << fileStream.rdbuf();
+        svgContent = buffer.str();
+
+        fileStream.close();
+    }
+
+    std::unordered_map<int, std::pair<int, int> > coordCache;
+    for (const auto &station: stations) {
+        coordCache[station.id] = GetCoordinates(station.lat, station.lon);
+    }
+
+    std::vector months = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+
+    std::unordered_map<int, std::unordered_map<int, double>> stationMonthAvg;
+
+    for (const auto& [stationId, yearMap] : averages) {
+        std::unordered_map<int, std::pair<double,int>> acc;
+        for (const auto& [year, monthMap] : yearMap)
+            for (const auto& [month, val] : monthMap) {
+                acc[month].first += val;
+                acc[month].second++;
+            }
+        for (const auto& [month, p] : acc)
+            stationMonthAvg[stationId][month] = p.first / p.second;
+    }
+
+    std::for_each(std::execution::par, months.begin(), months.end(), [&](int month) {
+        std::string svgMap = svgContent;
+
+        std::ostringstream allCircles;
+
+        for (const auto &station: stations) {
+            double avgTemp = stationMonthAvg.at(station.id).at(month);
+            auto [red, green, blue] = GetColor(avgTemp, globalMin, globalMax);
+            auto [x, y] = coordCache.at(station.id);
+
+            allCircles << "<circle cx=\"" << x
+                    << "\" cy=\"" << y
+                    << "\" r=\"" << Config::STATION_RADIUS
+                    << "\" fill=\"rgb(" << red << "," << green << "," << blue << ")\"/>\n";
+        }
+
+        size_t pos = svgMap.rfind("</svg>");
+        svgMap.insert(pos, allCircles.str());
+
+        std::string filePath = outputDir + "/" + monthNames[month - 1] + ".svg";
+        std::ofstream outputStream(filePath);
+        outputStream << svgMap;
+        outputStream.close();
+    });
 }

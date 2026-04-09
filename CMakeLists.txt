@@ -25,6 +25,10 @@ add_executable(UPP_Semestralka_1
         utils/Config.h
         output/CoordMapper.h
         output/ColorMapper.h
+        output/SvgWriter.cpp
+        core/AppRunner.h
+        core/AppRunner.cpp
+        utils/Timer.h
 )
 
 find_package(OpenMP REQUIRED)

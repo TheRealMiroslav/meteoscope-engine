@@ -5,3 +5,5 @@
 #include "../data/Anomaly.h"
 
 std::vector<Anomaly> detectAnomalies(const std::map<int, std::map<int, std::map<int, double>>> &averages);
+
+std::vector<Anomaly> detectAnomaliesParallel(const std::map<int, std::map<int, std::map<int, double>>> &averages);

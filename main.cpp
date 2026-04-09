@@ -1,79 +1,54 @@
-#include <algorithm>
 #include <iostream>
-#include <limits>
-#include <map>
+#include <string>
 #include <windows.h>
 
 #include "data/Station.h"
 #include "io/CsvParser.h"
-#include "io/CsvWriter.h"
-#include "output/SvgWriter.h"
-#include "processing/Aggregator.h"
-#include "processing/AnomalyDetector.h"
-#include "processing/Filter.h"
+#include "core/AppRunner.h"
+#include "utils/Timer.h"
 
-int main(int argc, char const *argv[]) {
+int main(const int argc, char const *argv[]) {
+#ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
+#endif
 
-    if (argc <= 3 || argc >= 5) {
-        std::cout << "Wrong number of arguments\n";
+    // Kontrola argumentů přesně podle zadání
+    if (argc != 4) {
+        std::cerr << "Pouziti: " << argv[0] << " <stanice.csv> <mereni.csv> <--serial|--parallel>\n";
         return -1;
     }
 
     const std::string stationPath = argv[1];
     const std::string measurementsPath = argv[2];
-    std::string mode = argv[3];
+    const std::string mode = argv[3];
 
+    // Načtení dat
+    std::cout << "Nacitam data ze souboru...\n";
     const std::vector<Station> stations = loadStations(stationPath);
     const std::vector<Measurement> measurements = loadMeasurement(measurementsPath);
+    std::cout << "Nacitam data ze souboru dokonceno!\n\n";
 
-    // první klič = ID stanice
-    // druhý klíč = Rok
-    std::map<int, std::map<int, std::vector<Measurement>>> groupedMeasurements;
+    // Vytvoříme a odstartujeme časovač
+    Timer timer;
+    timer.start();
 
-    for (const auto& measurement : measurements) {
-        int stationId = measurement.id;
-        int year = measurement.year;
-
-        groupedMeasurements[stationId][year].push_back(measurement);
+    // Spuštění konkrétní logiky podle třetího parametru
+    if (mode == "--serial") {
+        runSerial(stations, measurements);
+    } else if (mode == "--parallel") {
+        runParallel(stations, measurements);
+    } else {
+        std::cerr << "Chyba: Neplatny prepinac '" << mode << "'. Pouzijte --serial nebo --parallel.\n";
+        return -1;
     }
 
-    std::vector<int> passedFirstFilter = filterMinYears(groupedMeasurements, 5);
-    std::vector<int> passedSecondFilter = filterMinReadings(groupedMeasurements, 100);
-
-    std::sort(passedFirstFilter.begin(), passedFirstFilter.end());
-    std::sort(passedSecondFilter.begin(), passedSecondFilter.end());
-
-    std::vector<int> passedFilters = {};
-    std::set_intersection(passedFirstFilter.begin(), passedFirstFilter.end(), passedSecondFilter.begin(), passedSecondFilter.end(), std::back_inserter(passedFilters));
-
-    const std::map<int, std::map<int, std::map<int, double>>> monthlyAverages = computeMonthlyAverages(groupedMeasurements, passedFilters);
-
-    double globalMin = std::numeric_limits<double>::max();
-    double globalMax = std::numeric_limits<double>::lowest();
-
-    for (auto const& [stationId, yearMap] : monthlyAverages) {
-        for (auto const& [year, monthMap] : yearMap) {
-            for (auto const& [month, avg] : monthMap) {
-                if (avg < globalMin) globalMin = avg;
-                if (avg > globalMax) globalMax = avg;
-            }
-        }
-    }
-
-    std::vector<Anomaly> anomalies = detectAnomalies(monthlyAverages);
-
-    writeAnomaliesCsv(anomalies, "./");
-
-    std::vector<Station> filteredStations;
-    for (const auto& s : stations) {
-        if (std::find(passedFilters.begin(), passedFilters.end(), s.id) != passedFilters.end()) {
-            filteredStations.push_back(s);
-        }
-    }
-
-    writeSvgMaps(filteredStations, monthlyAverages, globalMin, globalMax, "./", "./");
+    // Zastavíme časovač a vypíšeme výsledek
+    timer.stop();
+    std::cout << "========================================\n";
+    std::cout << "Celkovy cas zpracovani: " << timer.elapsedSeconds() << " s ("
+            << timer.elapsedMilliseconds() << " ms)\n";
+    std::cout << "========================================\n";
 
     return 0;
 }

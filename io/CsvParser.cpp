@@ -1,4 +1,6 @@
 #include "CsvParser.h"
+
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 
@@ -56,7 +58,13 @@ std::vector<Measurement> loadMeasurement(const std::string& path) {
         std::getline(ss, token, ';');
         measurement.month = std::stoi(token);
 
+        // day
         std::getline(ss, token, ';');
+        //measurement.day = std::stoi(token);
+
+        //value
+        std::getline(ss, token, ';');
+        std::ranges::replace(token, ',', '.');
         measurement.value = std::stof(token);
 
         result.push_back(measurement);
