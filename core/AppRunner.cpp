@@ -80,9 +80,34 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
     std::cout << "Zpracovavam data (Paralelne)...\n\n";
 
     // 1. Seskupení dat
+    const size_t nThreads = std::thread::hardware_concurrency();
+    std::vector<std::map<int, std::map<int, std::vector<Measurement> > > > localMaps(nThreads);
+
+    std::vector<std::thread> threads;
+    const size_t chunkSize = (measurements.size() + nThreads - 1) / nThreads;
+
+    for (size_t t = 0; t < nThreads; t++) {
+        threads.emplace_back([&, t]() {
+            const size_t start = t * chunkSize;
+            const size_t end = std::min(start + chunkSize, measurements.size());
+
+            for (size_t i = start; i < end; i++) {
+                const auto &m = measurements[i];
+                localMaps[t][m.id][m.year].push_back(m);
+            }
+        });
+    }
+    for (auto &thread: threads) thread.join();
+
+    // Správný merge — sloučit vektory, ne přepsat
     std::map<int, std::map<int, std::vector<Measurement> > > groupedMeasurements;
-    for (const auto &measurement: measurements) {
-        groupedMeasurements[measurement.id][measurement.year].push_back(measurement);
+    for (const auto &localMap: localMaps) {
+        for (const auto &[stationId, yearMap]: localMap) {
+            for (const auto &[year, ms]: yearMap) {
+                auto &target = groupedMeasurements[stationId][year];
+                target.insert(target.end(), ms.begin(), ms.end());
+            }
+        }
     }
 
     // 2. Filtrování
@@ -132,7 +157,7 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
     const std::unordered_set<int> passedSet(passedFilters.begin(), passedFilters.end());
 
     std::vector<Station> filteredStations;
-    for (const auto& s : stations) {
+    for (const auto &s: stations) {
         if (passedSet.contains(s.id)) {
             filteredStations.push_back(s);
         }
