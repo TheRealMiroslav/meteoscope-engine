@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <execution>
+#include <ranges>
 #include <unordered_map>
 
 #include "ColorMapper.h"
@@ -39,7 +40,7 @@ void writeSvgMaps(const std::vector<Station> &stations,
         // 3a. zkopíruj svgContent
         std::string svgMap = svgContent;
 
-        std::string circle = "";
+        std::string circle;
 
         // 3b. for každá stanice
         for (const auto &station: stations) {
@@ -84,8 +85,7 @@ double getStationMonthAverage(
     double sum = 0;
     int count = 0;
 
-    // 2. Teď je bezpečné použít .at() nebo raději iterátor z find
-    for (auto const &[year, monthMap]: averages.at(stationId)) {
+    for (const auto &monthMap: averages.at(stationId) | std::views::values) {
         if (monthMap.contains(month)) {
             sum += monthMap.at(month);
             count++;
@@ -124,18 +124,25 @@ void writeSvgMapsParallel(const std::vector<Station> &stations,
 
     std::vector months = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 
-    std::unordered_map<int, std::unordered_map<int, double>> stationMonthAvg;
+    std::vector<int> stationIdVec;
+    stationIdVec.reserve(averages.size());
+    for (const auto &stationId: averages | std::views::keys)
+        stationIdVec.push_back(stationId);
 
-    for (const auto& [stationId, yearMap] : averages) {
-        std::unordered_map<int, std::pair<double,int>> acc;
-        for (const auto& [year, monthMap] : yearMap)
-            for (const auto& [month, val] : monthMap) {
+    std::unordered_map<int, std::unordered_map<int, double>> stationMonthAvg;
+    for (int stationId : stationIdVec)
+        stationMonthAvg[stationId];
+
+    std::for_each(std::execution::par, stationIdVec.begin(), stationIdVec.end(), [&](int stationId) {
+        std::unordered_map<int, std::pair<double, int>> acc;
+        for (const auto &monthMap: averages.at(stationId) | std::views::values)
+            for (const auto &[month, val] : monthMap) {
                 acc[month].first += val;
                 acc[month].second++;
             }
-        for (const auto& [month, p] : acc)
+        for (const auto &[month, p] : acc)
             stationMonthAvg[stationId][month] = p.first / p.second;
-    }
+    });
 
     std::for_each(std::execution::par, months.begin(), months.end(), [&](int month) {
         std::string svgMap = svgContent;
@@ -143,7 +150,7 @@ void writeSvgMapsParallel(const std::vector<Station> &stations,
         std::ostringstream allCircles;
 
         for (const auto &station: stations) {
-            double avgTemp = stationMonthAvg.at(station.id).at(month);
+            const double avgTemp = stationMonthAvg.at(station.id).at(month);
             auto [red, green, blue] = GetColor(avgTemp, globalMin, globalMax);
             auto [x, y] = coordCache.at(station.id);
 
@@ -153,10 +160,10 @@ void writeSvgMapsParallel(const std::vector<Station> &stations,
                     << "\" fill=\"rgb(" << red << "," << green << "," << blue << ")\"/>\n";
         }
 
-        size_t pos = svgMap.rfind("</svg>");
+        const size_t pos = svgMap.rfind("</svg>");
         svgMap.insert(pos, allCircles.str());
 
-        std::string filePath = outputDir + "/" + monthNames[month - 1] + ".svg";
+        const std::string filePath = outputDir + "/" + monthNames[month - 1] + ".svg";
         std::ofstream outputStream(filePath);
         outputStream << svgMap;
         outputStream.close();

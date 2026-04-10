@@ -50,7 +50,7 @@ std::vector<int> filterMinReadings(const std::map<int, std::map<int, std::vector
         }
 
         const int avg = static_cast<int>(numOfMeasurements / numOfYears);
-        if (avg > minPerYear) {
+        if (avg >= minPerYear) {
             result.push_back(stationId);
         }
     }

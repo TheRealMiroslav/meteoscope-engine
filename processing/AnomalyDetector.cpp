@@ -80,8 +80,10 @@ std::vector<Anomaly> detectAnomaliesParallel(
         std::vector<Anomaly> localAnomalies;
 
         for (int month = 1; month <= 12; month++) {
-            const auto &dataPoints = monthData[month];
+            auto &dataPoints = monthData[month];
             if (dataPoints.size() < 2) continue;
+
+            std::ranges::sort(dataPoints);
 
             double minVal = dataPoints[0].second;
             double maxVal = dataPoints[0].second;

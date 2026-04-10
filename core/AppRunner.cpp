@@ -64,13 +64,14 @@ void runSerial(const std::vector<Station> &stations, const std::vector<Measureme
 
     // 6. Filtrace stanic pro mapy a zápis SVG
     std::cout << "Vytváření map (Seriove)...\n";
+    const std::unordered_set<int> passedSet(passedFilters.begin(), passedFilters.end());
     std::vector<Station> filteredStations;
     for (const auto &s: stations) {
-        if (std::ranges::find(passedFilters, s.id) != passedFilters.end()) {
+        if (passedSet.contains(s.id)) {
             filteredStations.push_back(s);
         }
     }
-    writeSvgMaps(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH, "./maps/");
+    writeSvgMaps(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH, "../maps/");
     std::cout << "Vytváření map dokončeno! (Seriove)\n\n";
 
     std::cout << "Hotovo!\n\n";
@@ -99,15 +100,41 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
     }
     for (auto &thread: threads) thread.join();
 
-    // Správný merge — sloučit vektory, ne přepsat
-    std::map<int, std::map<int, std::vector<Measurement> > > groupedMeasurements;
+    // 1. Sbíráme všechna unikátní station IDs ze všech local maps
+    std::unordered_set<int> allStationIdsSet;
     for (const auto &localMap: localMaps) {
-        for (const auto &[stationId, yearMap]: localMap) {
-            for (const auto &[year, ms]: yearMap) {
-                auto &target = groupedMeasurements[stationId][year];
+        for (const auto &[sid, _]: localMap) {
+            allStationIdsSet.insert(sid);
+        }
+    }
+
+    std::vector<int> allStationIds(allStationIdsSet.begin(), allStationIdsSet.end());
+
+    // 2. Pre-alokujeme výsledkový vektor - jeden slot na stanici
+    std::vector<std::map<int, std::vector<Measurement> > > mergedVec(allStationIds.size());
+
+    std::vector<size_t> mergeIndices(allStationIds.size());
+    std::iota(mergeIndices.begin(), mergeIndices.end(), 0);
+
+    // 3. Každý thread sloučí data jedné stanice ze všech local maps
+    std::for_each(std::execution::par, mergeIndices.begin(), mergeIndices.end(), [&](size_t i) {
+        const int sid = allStationIds[i];
+        for (const auto &localMap: localMaps) {
+            const auto it = localMap.find(sid);
+
+            if (it == localMap.end()) continue;
+
+            for (const auto &[year, ms]: it->second) {
+                auto &target = mergedVec[i][year];
                 target.insert(target.end(), ms.begin(), ms.end());
             }
         }
+    });
+
+    // 4. Finální assembly - jen přesun pointerů, žádné kopírování dat
+    std::map<int, std::map<int, std::vector<Measurement> > > groupedMeasurements;
+    for (size_t i = 0; i < allStationIds.size(); i++) {
+        groupedMeasurements[allStationIds[i]] = std::move(mergedVec[i]);
     }
 
     // 2. Filtrování
