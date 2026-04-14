@@ -44,10 +44,21 @@ void writeParallelAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std:
 
     // 3. Paralelní formátování dat (převod čísel na text je CPU-heavy)
     std::for_each(std::execution::par, indices.begin(), indices.end(), [&](size_t i) {
+        /*
+        const auto &[station_id, month, year, diff] = anomalies[i];
+        lines[i] = std::to_string(station_id) + ";" +
+                   std::to_string(month) + ";" +
+                   std::to_string(year) + ";" +
+                   std::to_string(diff) + "\n";
+        */
         const auto &a = anomalies[i];
-        std::ostringstream oss;
-        oss << a.station_id << ";" << a.month << ";" << a.year << ";" << a.diff << "\n";
-        lines[i] = oss.str();
+
+        char buffer[128];
+
+        std::snprintf(buffer, sizeof(buffer), "%d;%d;%d;%g\n",
+                      a.station_id, a.month, a.year, a.diff);
+
+        lines[i] = std::string(buffer);
     });
 
     // 4. Bleskový sériový zápis hotových textů do souboru

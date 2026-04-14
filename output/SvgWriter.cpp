@@ -37,12 +37,6 @@ static double getStationMonthAverage(
 void writeSvgMaps(const std::vector<Station> &stations,
                   const std::map<int, std::map<int, std::map<int, double> > > &averages, double globalMin,
                   double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
-    // 1. názvy měsíců
-    const std::string monthNames[] = {
-        "1_leden", "2_unor", "3_brezen", "4_duben", "5_kveten", "6_cerven",
-        "7_cervenec", "8_srpen", "9_zari", "10_rijen", "11_listopad", "12_prosinec"
-    };
-
     // 2. načti czmap.svg
     std::string svgContent;
     std::ifstream fileStream(mapSvgPath);
@@ -60,29 +54,34 @@ void writeSvgMaps(const std::vector<Station> &stations,
 
     // 3. for month 1..12
     for (int month = 1; month <= 12; month++) {
+        // 1. názvy měsíců
+        constexpr std::string monthNames[] = {
+            "1_leden", "2_unor", "3_brezen", "4_duben", "5_kveten", "6_cerven",
+            "7_cervenec", "8_srpen", "9_zari", "10_rijen", "11_listopad", "12_prosinec"
+        };
+
         std::string monthName = monthNames[month - 1];
         std::string svgMap = svgContent;
-        std::string circle;
+
+        std::ostringstream allCircles;
 
         for (const auto &station: stations) {
             double avgTemp = getStationMonthAverage(averages, station.id, month);
             auto [red, green, blue] = GetColor(avgTemp, globalMin, globalMax);
             auto [x, y] = GetCoordinates(station.lat, station.lon);
 
-            std::ostringstream circleStream;
-            circleStream << "<circle cx=\"" << x
+            allCircles << "<circle cx=\"" << x
                     << "\" cy=\"" << y
                     << "\" r=\"" << Config::STATION_RADIUS
                     << "\" fill=\"rgb(" << red << "," << green << "," << blue << ")\"/>\n";
-            circle += circleStream.str();
         }
 
         size_t pos = svgMap.rfind("</svg>");
         if (pos != std::string::npos) {
-            svgMap.insert(pos, circle);
+            svgMap.insert(pos, allCircles.str());
         }
 
-        std::string filePath = outputDir + "/" + monthName + ".svg";
+        std::string filePath = outputDir + "/" += monthName + ".svg";
         std::ofstream outputStream(filePath);
         outputStream << svgMap;
         outputStream.close();
@@ -92,7 +91,7 @@ void writeSvgMaps(const std::vector<Station> &stations,
 void writeSvgMapsParallel(const std::vector<Station> &stations,
                           const std::map<int, std::map<int, std::map<int, double> > > &averages, double globalMin,
                           double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
-    const std::string monthNames[] = {
+    constexpr std::string monthNames[] = {
         "1_leden", "2_unor", "3_brezen", "4_duben", "5_kveten", "6_cerven",
         "7_cervenec", "8_srpen", "9_zari", "10_rijen", "11_listopad", "12_prosinec"
     };

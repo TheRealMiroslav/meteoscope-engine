@@ -3,7 +3,7 @@
 
 struct Station {
     int id;
-    std::string name;
+    //std::string name; k nicemu
     double lat;
     double lon;
 };
