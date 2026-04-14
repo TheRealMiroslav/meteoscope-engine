@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace Config {
     // Hranice mapy
     constexpr double LAT_MAX = 51.03806105663445;
@@ -13,7 +15,7 @@ namespace Config {
     constexpr double PIXEL_Y_MAX = 585.0;  // Kde končí dole
 
     // SVG rozměry
-    constexpr int SVG_WIDTH  = 1412;
+    constexpr int SVG_WIDTH = 1412;
     constexpr int SVG_HEIGHT = 809;
 
     // Velikost bodu stanice
@@ -21,4 +23,12 @@ namespace Config {
 
     // Cesta k slepé mapě
     constexpr auto MAP_SVG_PATH = "czmap.svg";
+
+    constexpr std::string OUTPUT_DIR = "../maps/";
+
+    const std::string OUTPUT_SERIAL_MAPS_DIR = OUTPUT_DIR + "serial_maps/";
+    const std::string OUTPUT_PARALLEL_MAPS_DIR = OUTPUT_DIR + "parallel_maps/";
+
+    const std::string OUTPUT_SERIAL_FLUCTUATION_DIR = OUTPUT_DIR + "serial_vykyvy.csv";
+    const std::string OUTPUT_PARALLEL_FLUCTUATION_DIR = OUTPUT_DIR + "parallel_vykyvy.csv";
 }

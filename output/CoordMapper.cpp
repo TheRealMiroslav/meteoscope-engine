@@ -1,5 +1,4 @@
 #include "CoordMapper.h"
-
 #include "../utils/Config.h"
 
 std::pair<int, int> GetCoordinates(const double lat, const double lon) {
