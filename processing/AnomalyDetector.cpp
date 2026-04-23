@@ -13,8 +13,7 @@ std::vector<Anomaly> detectAnomalies(const std::map<int, std::map<int, std::map<
     std::vector<Anomaly> result;
 
     for (const auto &[stationId, yearMap]: averages) {
-
-        // 1. Průchod: Najdeme lokální MIN a MAX pro každý měsíc [1..12] pro tuto konkrétní stanici
+        // Lokální MIN a MAX pro tuto stanici
         std::array<double, 13> minVals{};
         std::array<double, 13> maxVals{};
         minVals.fill(std::numeric_limits<double>::max());
@@ -27,14 +26,13 @@ std::vector<Anomaly> detectAnomalies(const std::map<int, std::map<int, std::map<
             }
         }
 
-        // 2. Předvypočítáme si thresholdy pro měsíce této stanice
+        // Předvypočítáme si thresholdy pro měsíce této stanice
         std::array<double, 13> thresholds{0};
         for (int m = 1; m <= 12; ++m) {
             thresholds[m] = 0.75 * (maxVals[m] - minVals[m]);
         }
 
-        // 3. Průchod: Zkontrolujeme anomálie.
-        // Protože std::map má roky už automaticky seřazené, stačí si jen pamatovat hodnotu z předchozího roku.
+        // Chronologická detekce výkyvů
         std::array<std::pair<int, double>, 13> prevMonthData;
         for (auto &fst: prevMonthData | std::views::keys) fst = -1; // -1 = zatím neznámý rok
 
@@ -59,7 +57,6 @@ std::vector<Anomaly> detectAnomalies(const std::map<int, std::map<int, std::map<
 
 std::vector<Anomaly> detectAnomaliesParallel(
     const std::map<int, std::map<int, std::map<int, double> > > &averages) {
-
     std::vector<int> stationIds;
     stationIds.reserve(averages.size());
     for (const auto &id: averages | std::views::keys) {
@@ -71,12 +68,12 @@ std::vector<Anomaly> detectAnomaliesParallel(
 
     std::vector<std::vector<Anomaly> > threadResults(stationIds.size());
 
-    std::for_each(std::execution::par, indices.begin(), indices.end(), [&](size_t i) {
+    std::for_each(std::execution::par, indices.begin(), indices.end(), [&](const size_t i) {
         const int stationId = stationIds[i];
         const auto &yearMap = averages.at(stationId);
         std::vector<Anomaly> localAnomalies;
 
-        // 1. Lokální MIN a MAX (bez alokace polí)
+        // Lokální MIN a MAX pro tuto stanici
         std::array<double, 13> minVals{};
         std::array<double, 13> maxVals{};
         minVals.fill(std::numeric_limits<double>::max());
@@ -89,15 +86,15 @@ std::vector<Anomaly> detectAnomaliesParallel(
             }
         }
 
-        // 2. Výpočet hranic výkyvu (thresholdů)
+        // Výpočet hranic výkyvu pro měsíce této stanice
         std::array<double, 13> thresholds{0};
         for (int m = 1; m <= 12; ++m) {
             thresholds[m] = 0.75 * (maxVals[m] - minVals[m]);
         }
 
-        // 3. Chronologická detekce výkyvů
+        // Chronologická detekce výkyvů
         std::array<std::pair<int, double>, 13> prevMonthData;
-        for (auto &p : prevMonthData) p.first = -1;
+        for (auto &p: prevMonthData | std::views::keys) p = -1;
 
         for (const auto &[year, monthMap]: yearMap) {
             for (const auto &[month, avg]: monthMap) {
