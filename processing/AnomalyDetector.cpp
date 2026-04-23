@@ -8,6 +8,7 @@
 #include <limits>
 #include <ranges>
 #include <tuple>
+#include <iterator>
 
 std::vector<Anomaly> detectAnomalies(const std::map<int, std::map<int, std::map<int, double> > > &averages) {
     std::vector<Anomaly> result;
@@ -112,16 +113,32 @@ std::vector<Anomaly> detectAnomaliesParallel(
         threadResults[i] = std::move(localAnomalies);
     });
 
-    // Sériový sběr výsledků vláken
-    std::vector<Anomaly> finalAnomalies;
+    size_t totalAnomalies = 0;
     for (const auto &res: threadResults) {
-        finalAnomalies.insert(finalAnomalies.end(), res.begin(), res.end());
+        totalAnomalies += res.size();
     }
 
-    std::ranges::sort(finalAnomalies, [](const Anomaly &a, const Anomaly &b) {
+    std::vector<Anomaly> finalAnomalies;
+    finalAnomalies.reserve(totalAnomalies);
+
+    for (auto &res: threadResults) {
+        finalAnomalies.insert(finalAnomalies.end(),
+                              std::make_move_iterator(res.begin()),
+                              std::make_move_iterator(res.end()));
+    }
+
+    auto byStationYearMonth = [](const Anomaly &a, const Anomaly &b) {
         return std::tie(a.station_id, a.year, a.month) <
-               std::tie(b.station_id, b.month, b.year);
-    });
+               std::tie(b.station_id, b.year, b.month);
+    };
+
+    // U menších dat má serial sort nižší režii, větší data umí využít paralelní sort.
+    constexpr size_t PAR_SORT_THRESHOLD = 200000;
+    if (finalAnomalies.size() >= PAR_SORT_THRESHOLD) {
+        std::sort(std::execution::par, finalAnomalies.begin(), finalAnomalies.end(), byStationYearMonth);
+    } else {
+        std::ranges::sort(finalAnomalies, byStationYearMonth);
+    }
 
     return finalAnomalies;
 }

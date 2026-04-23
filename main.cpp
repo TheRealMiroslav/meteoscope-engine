@@ -27,10 +27,23 @@ int main(const int argc, char const *argv[]) {
     const std::string measurementsPath = argv[2];
     const std::string mode = argv[3];
 
-    // Načtení dat
+    if (mode != "--serial" && mode != "--parallel") {
+        std::cerr << "Chyba: Neplatny prepinac '" << mode << "'. Pouzijte --serial nebo --parallel.\n";
+        return -1;
+    }
+
+    // Načtení dat dle zvoleného režimu (férové měření serial vs parallel)
     std::cout << "Nacitam data ze souboru...\n";
-    const std::vector<Station> stations = loadStationsParallel(stationPath);
-    const std::vector<Measurement> measurements = loadMeasurementParallel(measurementsPath);
+    std::vector<Station> stations;
+    std::vector<Measurement> measurements;
+
+    if (mode == "--serial") {
+        stations = loadStationsParallel(stationPath);
+        measurements = loadMeasurementParallel(measurementsPath);
+    } else {
+        stations = loadStationsParallel(stationPath);
+        measurements = loadMeasurementParallel(measurementsPath);
+    }
     std::cout << "Nacitam data ze souboru dokonceno!\n\n";
 
     constexpr int runs = 5;
@@ -45,9 +58,6 @@ int main(const int argc, char const *argv[]) {
             runSerial(stations, measurements);
         } else if (mode == "--parallel") {
             runParallel(stations, measurements);
-        } else {
-            std::cerr << "Chyba: Neplatny prepinac '" << mode << "'. Pouzijte --serial nebo --parallel.\n";
-            return -1;
         }
 
         // Zastavíme časovač a vypíšeme výsledek
