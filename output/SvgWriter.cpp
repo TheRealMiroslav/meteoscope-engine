@@ -3,22 +3,21 @@
 #include <vector>
 #include <string>
 #include <ranges>
-#include <unordered_map>
 #include <map>
-#include <array>
 #include <execution>
-#include <numeric>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <filesystem>
 #include <utility>
-#include <cstdint>
 
 #include "ColorMapper.h"
 #include "CoordMapper.h"
 #include "../utils/Config.h"
+
+namespace fs = std::filesystem;
 
 /**
  * @brief Vypočítá dlouhodobý průměr teploty pro konkrétní stanici a měsíc (napříč všemi roky).
@@ -68,6 +67,11 @@ double getStationMonthAverage(
 void writeSvgMapsSerial(const std::vector<Station> &filteredStations,
                         const std::map<int, std::map<int, std::map<int, double> > > &monthlyAverages, double globalMin,
                         double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
+    // Automatické vytvoření výstupní složky, pokud neexistuje
+    if (!outputDir.empty()) {
+        fs::create_directories(outputDir);
+    }
+
     std::string svgContent;
     std::ifstream fileStream(mapSvgPath);
 
@@ -144,6 +148,11 @@ void writeSvgMapsParallel(
     double globalMin, double globalMax,
     const std::string &mapSvgPath,
     const std::string &outputDir) {
+    // Automatické vytvoření výstupní složky
+    if (!outputDir.empty()) {
+        fs::create_directories(outputDir);
+    }
+
     constexpr const char *monthNames[] = {
         "1_leden", "2_unor", "3_brezen", "4_duben", "5_kveten", "6_cerven",
         "7_cervenec", "8_srpen", "9_zari", "10_rijen", "11_listopad", "12_prosinec"

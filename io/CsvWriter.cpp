@@ -5,6 +5,9 @@
 #include <fstream>
 #include <numeric>
 #include <sstream>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 /**
  * @brief Sériový zápis nalezených anomálií do CSV formátu.
@@ -15,6 +18,12 @@
  * @throws std::runtime_error Pokud nelze cílový soubor otevřít pro zápis.
  */
 void writeSerialAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::string &filePath) {
+    // Automatické vytvoření výstupní složky, pokud neexistuje
+    fs::path path(filePath);
+    if (path.has_parent_path()) {
+        fs::create_directories(path.parent_path());
+    }
+
     std::ofstream file(filePath);
     if (!file.is_open()) {
         throw std::runtime_error("Chyba: Nepodarilo se vytvorit soubor pro zapis anomalii: " + filePath);
@@ -44,8 +53,13 @@ void writeSerialAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::s
  * @throws std::runtime_error Pokud nelze cílový soubor otevřít pro zápis.
  */
 void writeParallelAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::string &filePath) {
-    std::ofstream file(filePath);
+    // Automatické vytvoření výstupní složky, pokud neexistuje
+    fs::path path(filePath);
+    if (path.has_parent_path()) {
+        fs::create_directories(path.parent_path());
+    }
 
+    std::ofstream file(filePath);
     if (!file.is_open()) {
         throw std::runtime_error("Chyba: Nepodarilo se vytvorit soubor pro zapis anomalii: " + filePath);
     }
