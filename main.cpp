@@ -37,22 +37,27 @@ int main(const int argc, char const *argv[]) {
     std::vector<Station> stations;
     std::vector<Measurement> measurements;
 
+    // Vytvoříme a odstartujeme časovač
+    Timer timer;
+    timer.start();
+
     if (mode == "--serial") {
-        stations = loadStationsParallel(stationPath);
-        measurements = loadMeasurementParallel(measurementsPath);
+        stations = loadStationsOptimized(stationPath);
+        measurements = loadMeasurementOptimized(measurementsPath);
+
+        runSerial(stations, measurements);
     } else {
         stations = loadStationsParallel(stationPath);
         measurements = loadMeasurementParallel(measurementsPath);
+
+        runParallel(stations, measurements);
     }
     std::cout << "Nacitam data ze souboru dokonceno!\n\n";
 
+    /*
     constexpr int runs = 5;
     long soucet = 0;
-    for (int i = 0; i < runs; ++i) {
-        // Vytvoříme a odstartujeme časovač
-        Timer timer;
-        timer.start();
-
+    for (int i = 0; i < runs; ++i)
         // Spuštění konkrétní logiky podle třetího parametru
         if (mode == "--serial") {
             runSerial(stations, measurements);
@@ -71,7 +76,13 @@ int main(const int argc, char const *argv[]) {
     }
 
     soucet /= runs; // Průměrný čas v ms
-    std::cout << soucet << std::endl;
+    std::cout << soucet << std::endl;*/
+
+    // Zastavíme časovač a vypíšeme výsledek
+    timer.stop();
+
+    std::cout << "Cas zpracovani: " << timer.elapsedSeconds() << " s ("
+                << timer.elapsedMilliseconds() << " ms)\n";
 
     return 0;
 }

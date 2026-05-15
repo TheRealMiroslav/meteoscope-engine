@@ -84,89 +84,116 @@ std::vector<Measurement> loadMeasurement(const std::string &path) {
 }
 
 std::vector<Station> loadStationsOptimized(const std::string &path) {
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) return {};
+
+    const std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::string buffer(size, '\0');
+    if (!file.read(buffer.data(), size)) return {};
+
+    const size_t headerEnd = buffer.find('\n');
+    if (headerEnd == std::string::npos) return {};
+
     std::vector<Station> result;
-    std::ifstream file(path);
+    result.reserve(size / 50);
 
-    if (!file.is_open()) return result;
+    const char *p = buffer.data() + headerEnd + 1;
+    const char *end = buffer.data() + size;
 
-    std::string line;
-    std::getline(file, line); // Hlavička
+    while (p < end) {
+        const char *lineEnd = p;
+        while (lineEnd < end && *lineEnd != '\n') lineEnd++;
 
-    while (std::getline(file, line)) {
-        if (line.empty()) continue;
+        if (lineEnd > p) {
+            Station station{};
+            const char *curr = p;
 
-        Station station{};
-        const char *p = line.data();
-        const char *end = p + line.size();
+            // ID
+            auto [ptr1, ec1] = std::from_chars(curr, lineEnd, station.id);
+            curr = ptr1;
+            if (curr < lineEnd && *curr == ';') ++curr;
 
-        // ID
-        auto [ptr1, ec1] = std::from_chars(p, end, station.id);
-        p = ptr1;
-        if (p < end && *p == ';') ++p;
+            // Name (přeskočíme)
+            while (curr < lineEnd && *curr != ';') ++curr;
+            if (curr < lineEnd && *curr == ';') ++curr;
 
-        // Name (přeskočíme)
-        while (p < end && *p != ';') ++p;
-        if (p < end && *p == ';') ++p;
+            // Lat
+            auto [ptr2, ec2] = std::from_chars(curr, lineEnd, station.lat);
+            curr = ptr2;
+            if (curr < lineEnd && *curr == ';') ++curr;
 
-        auto [ptr2, ec2] = std::from_chars(p, end, station.lat);
-        p = ptr2;
-        if (p < end && *p == ';') ++p;
+            // Lon
+            std::from_chars(curr, lineEnd, station.lon);
 
-        // Lon
-        std::from_chars(p, end, station.lon);
-
-        result.push_back(station);
+            result.push_back(station);
+        }
+        p = lineEnd + 1;
     }
 
     return result;
 }
 
 std::vector<Measurement> loadMeasurementOptimized(const std::string &path) {
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) return {};
+
+    const std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::string buffer(size, '\0');
+    if (!file.read(buffer.data(), size)) return {};
+
+    const size_t headerEnd = buffer.find('\n');
+    if (headerEnd == std::string::npos) return {};
+
     std::vector<Measurement> result;
-    std::ifstream file(path);
+    result.reserve(size / 30);
 
-    if (!file.is_open()) return result;
+    const char *p = buffer.data() + headerEnd + 1;
+    const char *end = buffer.data() + size;
 
-    std::string line;
-    std::getline(file, line); // Hlavička
+    while (p < end) {
+        const char *lineEnd = p;
+        while (lineEnd < end && *lineEnd != '\n') lineEnd++;
 
-    while (std::getline(file, line)) {
-        if (line.empty()) continue;
+        if (lineEnd > p) {
+            Measurement m{};
+            const char *curr = p;
 
-        Measurement m{};
-        const char *p = line.data();
-        const char *end = p + line.size();
+            // id
+            auto [ptr1, ec1] = std::from_chars(curr, lineEnd, m.id);
+            curr = ptr1 + 1; // přeskočíme ';'
 
-        // id
-        auto [ptr1, ec1] = std::from_chars(p, end, m.id);
-        p = ptr1 + 1; // přeskočíme ';'
+            // ordinal
+            auto [ptr2, ec2] = std::from_chars(curr, lineEnd, m.ordinal);
+            curr = ptr2 + 1;
 
-        // ordinal
-        auto [ptr2, ec2] = std::from_chars(p, end, m.ordinal);
-        p = ptr2 + 1;
+            // year
+            auto [ptr3, ec3] = std::from_chars(curr, lineEnd, m.year);
+            curr = ptr3 + 1;
 
-        // year
-        auto [ptr3, ec3] = std::from_chars(p, end, m.year);
-        p = ptr3 + 1;
+            // month
+            auto [ptr4, ec4] = std::from_chars(curr, lineEnd, m.month);
+            curr = ptr4 + 1;
 
-        // month
-        auto [ptr4, ec4] = std::from_chars(p, end, m.month);
-        p = ptr4 + 1;
+            // day (přeskočíme)
+            while (curr < lineEnd && *curr != ';') ++curr;
+            ++curr;
 
-        // day (přeskočíme)
-        while (p < end && *p != ';') ++p;
-        ++p; // přeskočíme ';'
+            // value
+            char valBuf[32];
+            size_t len = 0;
+            while (curr < lineEnd && *curr != '\r' && len < 31) {
+                valBuf[len++] = (*curr == ',') ? '.' : *curr;
+                ++curr;
+            }
+            std::from_chars(valBuf, valBuf + len, m.value);
 
-        // value
-        char valBuf[32];
-        size_t len = 0;
-        while (p < end && *p != '\r' && *p != '\n' && len < 31) {
-            valBuf[len++] = (*p == ',') ? '.' : *p;
-            ++p;
+            result.push_back(m);
         }
-        std::from_chars(valBuf, valBuf + len, m.value);
-
-        result.push_back(m);
+        p = lineEnd + 1;
     }
     return result;
 }
@@ -175,7 +202,7 @@ std::vector<Measurement> loadMeasurementParallel(const std::string &path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) return {};
 
-    std::streamsize size = file.tellg();
+    const std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
 
     std::string buffer(size, '\0');
