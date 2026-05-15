@@ -42,8 +42,8 @@ int main(const int argc, char const *argv[]) {
     timer.start();
 
     if (mode == "--serial") {
-        stations = loadStationsOptimized(stationPath);
-        measurements = loadMeasurementOptimized(measurementsPath);
+        stations = loadStationsSerial(stationPath);
+        measurements = loadMeasurementSerial(measurementsPath);
 
         runSerial(stations, measurements);
     } else {

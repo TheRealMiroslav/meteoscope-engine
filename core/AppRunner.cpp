@@ -17,6 +17,16 @@
 #include "../output/SvgWriter.h"
 #include "../utils/Config.h"
 
+/**
+ * @brief Sériová verze hlavního procesu pro zpracování meteorologických dat.
+ *
+ * Funkce postupně seskupí data, vyfiltruje validní stanice (podle počtu let a záznamů),
+ * vypočítá měsíční průměry, najde globální extrémy, detekuje anomálie a následně
+ * vygeneruje CSV reporty a SVG mapy. Vše probíhá sekvenčně v jednom vlákně.
+ *
+ * @param stations Vektor všech dostupných meteorologických stanic.
+ * @param measurements Vektor všech naměřených hodnot ke zpracování.
+ */
 void runSerial(const std::vector<Station> &stations, const std::vector<Measurement> &measurements) {
     // 1. Seskupení dat
     // Vytvoření struktury: ID stanice -> (Rok -> Naměřené hodnoty)
@@ -70,6 +80,16 @@ void runSerial(const std::vector<Station> &stations, const std::vector<Measureme
                  Config::OUTPUT_SERIAL_MAPS_DIR);
 }
 
+/**
+ * @brief Paralelní verze hlavního procesu pro zpracování meteorologických dat.
+ *
+ * Funkce provádí stejné kroky jako `runSerial`, ale využívá vícevláknové zpracování
+ * (std::thread, std::execution::par) k optimalizaci výpočtů a agregace dat.
+ * Obsahuje map-reduce logiku pro bezpečné rozdělení a sloučení dat mezi vlákny.
+ *
+ * @param stations Vektor všech dostupných meteorologických stanic.
+ * @param measurements Vektor všech naměřených hodnot ke zpracování.
+ */
 void runParallel(const std::vector<Station> &stations, const std::vector<Measurement> &measurements) {
     // 1. Seskupení dat (Paralelne)
     // Zjištění počtu dostupných hardwarových vláken (minimálně 1)
