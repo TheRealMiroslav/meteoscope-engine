@@ -1,9 +1,13 @@
 #pragma once
-#include <string>
 
+/**
+ * @brief Reprezentuje meteorologickou stanici a její geografickou polohu.
+ *
+ * Slouží primárně k mapování naměřených dat na konkrétní fyzické umístění,
+ * což je nezbytné pro následnou vizualizaci (např. SVG mapy).
+ */
 struct Station {
-    int id;
-    //std::string name; k nicemu
-    double lat;
-    double lon;
+    int id;         ///< Unikátní identifikátor meteorologické stanice.
+    double lat;     ///< Zeměpisná šířka (latitude) polohy stanice.
+    double lon;     ///< Zeměpisná délka (longitude) polohy stanice.
 };
