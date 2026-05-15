@@ -3,7 +3,6 @@ project(UPP_Semestralka_1)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Ruční vypsání souborů - máš nad tím 100% kontrolu
 add_executable(UPP_Semestralka_1
         main.cpp
         io/CsvParser.cpp
@@ -30,6 +29,3 @@ add_executable(UPP_Semestralka_1
         core/AppRunner.cpp
         utils/Timer.h
 )
-
-find_package(OpenMP REQUIRED)
-target_link_libraries(UPP_Semestralka_1 PUBLIC OpenMP::OpenMP_CXX)
