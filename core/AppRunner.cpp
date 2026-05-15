@@ -76,8 +76,8 @@ void runSerial(const std::vector<Station> &stations, const std::vector<Measureme
     }
 
     // Vykreslení SVG map s využitím zjištěných extrémů pro normalizaci teplotní škály
-    writeSvgMaps(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH,
-                 Config::OUTPUT_SERIAL_MAPS_DIR);
+    writeSvgMapsSerial(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH,
+                       Config::OUTPUT_SERIAL_MAPS_DIR);
 }
 
 /**
@@ -238,6 +238,6 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
     }
 
     // Spuštění vysoce optimalizovaného paralelního zápisu SVG souborů
-    writeSvgMapsParallelOptimized(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH,
-                                  Config::OUTPUT_PARALLEL_MAPS_DIR);
+    writeSvgMapsParallel(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH,
+                         Config::OUTPUT_PARALLEL_MAPS_DIR);
 }

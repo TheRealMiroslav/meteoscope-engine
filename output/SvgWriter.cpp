@@ -20,9 +20,19 @@
 #include "CoordMapper.h"
 #include "../utils/Config.h"
 
+/**
+ * @brief Vypočítá dlouhodobý průměr teploty pro konkrétní stanici a měsíc (napříč všemi roky).
+ *
+ * @param averages Vnořená mapa měření.
+ * @param stationId ID cílové stanice.
+ * @param month Cílový měsíc (1-12).
+ *
+ * @return double Vypočítaný teplotní průměr. Pokud nejsou data k dispozici, vrací 0.0.
+ */
 double getStationMonthAverage(
     const std::map<int, std::map<int, std::map<int, double> > > &averages,
     const int stationId, const int month) {
+    // Ochrana před přístupem k neexistujícím datům stanice
     if (!averages.contains(stationId)) {
         return 0.0;
     }
@@ -30,6 +40,7 @@ double getStationMonthAverage(
     double sum = 0;
     int count = 0;
 
+    // Iterace přes všechny roky dané stanice
     for (const auto &monthMap: averages.at(stationId) | std::views::values) {
         if (monthMap.contains(month)) {
             sum += monthMap.at(month);
@@ -41,13 +52,26 @@ double getStationMonthAverage(
     return sum / count;
 }
 
-void writeSvgMaps(const std::vector<Station> &stations,
-                  const std::map<int, std::map<int, std::map<int, double> > > &averages, double globalMin,
-                  double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
-    // 2. načti czmap.svg
+/**
+ * @brief Sekvenčně vygeneruje SVG mapy pro všech 12 měsíců v roce.
+ *
+ * Funkce načte podkladovou šablonu, a následně pro každý měsíc iteruje přes
+ * všechny stanice, vypočítá jejich barvu a souřadnice a výsledné SVG uloží.
+ *
+ * @param filteredStations Vektor všech dostupných meteorologických stanic.
+ * @param monthlyAverages Vnořená mapa obsahující průměrné teploty [stanice -> [rok -> [měsíc -> teplota]]].
+ * @param globalMin Celkové teplotní minimum ze všech dat pro správné škálování barev.
+ * @param globalMax Celkové teplotní maximum ze všech dat pro správné škálování barev.
+ * @param mapSvgPath Cesta k podkladové SVG mapě, která slouží jako šablona.
+ * @param outputDir Cílový adresář pro uložení vygenerovaných map.
+ */
+void writeSvgMapsSerial(const std::vector<Station> &filteredStations,
+                        const std::map<int, std::map<int, std::map<int, double> > > &monthlyAverages, double globalMin,
+                        double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
     std::string svgContent;
     std::ifstream fileStream(mapSvgPath);
 
+    // Načtení podkladového SVG do paměti jako jeden textový řetězec
     if (!fileStream.is_open()) {
         throw std::runtime_error("Chyba: Nepodarilo se nacist podkladovou mapu: " + mapSvgPath);
     }
@@ -59,9 +83,8 @@ void writeSvgMaps(const std::vector<Station> &stations,
         fileStream.close();
     }
 
-    // 3. for month 1..12
     for (int month = 1; month <= 12; month++) {
-        // 1. názvy měsíců
+        // Názvy výstupních souborů
         constexpr const char *monthNames[] = {
             "1_leden", "2_unor", "3_brezen", "4_duben", "5_kveten", "6_cerven",
             "7_cervenec", "8_srpen", "9_zari", "10_rijen", "11_listopad", "12_prosinec"
@@ -70,24 +93,30 @@ void writeSvgMaps(const std::vector<Station> &stations,
         std::string monthName = monthNames[month - 1];
         std::string svgMap = svgContent;
 
+        // Použití ostringstream pro efektivní řetězení XML tagů generovaných v paměti
         std::ostringstream allCircles;
 
-        for (const auto &station: stations) {
-            double avgTemp = getStationMonthAverage(averages, station.id, month);
+        for (const auto &station: filteredStations) {
+            double avgTemp = getStationMonthAverage(monthlyAverages, station.id, month);
+
+            // Mapování teploty na RGB hodnotu a geolokačních dat na SVG souřadnice
             auto [red, green, blue] = GetColor(avgTemp, globalMin, globalMax);
             auto [x, y] = GetCoordinates(station.lat, station.lon);
 
+            // Vygenerování SVG elementu <circle> pro konkrétní stanici
             allCircles << "<circle cx=\"" << x
                     << "\" cy=\"" << y
                     << "\" r=\"" << Config::STATION_RADIUS
                     << "\" fill=\"rgb(" << red << "," << green << "," << blue << ")\"/>\n";
         }
 
+        // Vyhledání uzavíracího tagu </svg> pro bezpečné vložení elementů
         size_t pos = svgMap.rfind("</svg>");
         if (pos != std::string::npos) {
             svgMap.insert(pos, allCircles.str());
         }
 
+        // Zápis finálního obsahu do souboru pro aktuální měsíc
         std::string filePath = outputDir + "/" + monthName + ".svg";
         std::ofstream outputStream(filePath);
         outputStream << svgMap;
@@ -95,134 +124,41 @@ void writeSvgMaps(const std::vector<Station> &stations,
     }
 }
 
-void writeSvgMapsParallel(const std::vector<Station> &stations,
-                          const std::map<int, std::map<int, std::map<int, double> > > &averages, double globalMin,
-                          double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
-    constexpr const char *monthNames[] = {
-        "1_leden", "2_unor", "3_brezen", "4_duben", "5_kveten", "6_cerven",
-        "7_cervenec", "8_srpen", "9_zari", "10_rijen", "11_listopad", "12_prosinec"
-    };
-
-    std::string svgContent;
-    std::ifstream fileStream(mapSvgPath);
-
-    if (!fileStream.is_open()) {
-        throw std::runtime_error("Chyba: Nepodarilo se nacist podkladovou mapu: " + mapSvgPath);
-    }
-
-    if (fileStream.is_open()) {
-        std::stringstream buffer;
-        buffer << fileStream.rdbuf();
-        svgContent = buffer.str();
-        fileStream.close();
-    }
-
-    std::unordered_map<int, std::pair<int, int> > coordCache;
-    for (const auto &station: stations) {
-        coordCache[station.id] = GetCoordinates(station.lat, station.lon);
-    }
-
-    std::vector<int> stationIdVec;
-    stationIdVec.reserve(averages.size());
-    for (const auto &stationId: averages | std::views::keys) {
-        stationIdVec.push_back(stationId);
-    }
-
-    // Bezpečná paralelní struktura (index 1..12 pro měsíce, pole inicializováno na 0)
-    std::vector<std::array<double, 13> > threadAvgResults(stationIdVec.size());
-    for (auto &arr: threadAvgResults) arr.fill(0.0);
-
-    std::vector<size_t> indices(stationIdVec.size());
-    std::iota(indices.begin(), indices.end(), 0);
-
-    // Paralelní výpočet průměrů per stanice bez konfliktů zápisu (Data Race volné)
-    std::for_each(std::execution::par, indices.begin(), indices.end(), [&](size_t i) {
-        const int stationId = stationIdVec[i];
-        std::array<double, 13> sums{0};
-        std::array<int, 13> counts{0};
-
-        for (const auto &monthMap: averages.at(stationId) | std::views::values) {
-            for (const auto &[month, val]: monthMap) {
-                sums[month] += val;
-                counts[month]++;
-            }
-        }
-
-        for (int m = 1; m <= 12; ++m) {
-            if (counts[m] > 0) {
-                threadAvgResults[i][m] = sums[m] / counts[m];
-            }
-        }
-    });
-
-    // Rychlé sériové přelití do mapy pro O(1) vyhledávání
-    std::unordered_map<int, std::array<double, 13> > stationMonthAvg;
-    for (size_t i = 0; i < stationIdVec.size(); ++i) {
-        stationMonthAvg[stationIdVec[i]] = threadAvgResults[i];
-    }
-
-    std::vector<int> months = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-
-    std::for_each(std::execution::par, months.begin(), months.end(), [&](int month) {
-        std::string svgMap = svgContent;
-        std::ostringstream allCircles;
-
-        for (const auto &station: stations) {
-            // Kontrola existence zamezí případnému pádu
-            auto it = stationMonthAvg.find(station.id);
-            if (it != stationMonthAvg.end()) {
-                const double avgTemp = it->second[month];
-                auto [red, green, blue] = GetColor(avgTemp, globalMin, globalMax);
-                auto [x, y] = coordCache.at(station.id);
-
-                allCircles << "<circle cx=\"" << x
-                        << "\" cy=\"" << y
-                        << "\" r=\"" << Config::STATION_RADIUS
-                        << "\" fill=\"rgb(" << red << "," << green << "," << blue << ")\"/>\n";
-            }
-        }
-
-        size_t pos = svgMap.rfind("</svg>");
-        if (pos != std::string::npos) {
-            svgMap.insert(pos, allCircles.str());
-        }
-
-        const std::string filePath = outputDir + "/" + monthNames[month - 1] + ".svg";
-        std::ofstream outputStream(filePath);
-        outputStream << svgMap;
-        outputStream.close();
-    });
-}
-
 /**
- * @brief Vylepšená paralelní verze pro zápis SVG map, která minimalizuje režii a zamezuje datovým konfliktům.
+ * @brief Paralelně vygeneruje SVG mapy pro všech 12 měsíců v roce.
  *
- * @param filteredStations - pouze stanice, které prošly filtry (pro zrychlení)
- * @param monthlyAverages
- * @param globalMin
- * @param globalMax
- * @param templatePath
- * @param outputDir
+ * Pro dosažení vyššího výkonu je práce rozdělena pomocí std::execution::par.
+ * Každé vlákno řeší jeden měsíc, provádí vlastní výpočty a samostatně zapisuje
+ * do vlastního cílového souboru, což zajišťuje bezpečný běh bez nutnosti zámků (lock-free).
+ *
+ * @param filteredStations Vektor (filtrovaných) meteorologických stanic k vykreslení.
+ * @param monthlyAverages Vnořená mapa obsahující průměrné teploty [stanice -> [rok -> [měsíc -> teplota]]].
+ * @param globalMin Celkové teplotní minimum ze všech dat pro správné škálování barev.
+ * @param globalMax Celkové teplotní maximum ze všech dat pro správné škálování barev.
+ * @param mapSvgPath Cesta k podkladové SVG mapě, která slouží jako šablona.
+ * @param outputDir Cílový adresář pro uložení vygenerovaných map.
  */
-void writeSvgMapsParallelOptimized(
+void writeSvgMapsParallel(
     const std::vector<Station> &filteredStations,
     const std::map<int, std::map<int, std::map<int, double> > > &monthlyAverages,
     double globalMin, double globalMax,
-    const std::string &templatePath,
+    const std::string &mapSvgPath,
     const std::string &outputDir) {
-
     constexpr const char *monthNames[] = {
         "1_leden", "2_unor", "3_brezen", "4_duben", "5_kveten", "6_cerven",
         "7_cervenec", "8_srpen", "9_zari", "10_rijen", "11_listopad", "12_prosinec"
     };
 
-    std::ifstream t(templatePath);
+    // Načtení šablony jen jednou pro všechny měsíce
+    std::ifstream t(mapSvgPath);
     if (!t.is_open()) return;
 
     std::stringstream buffer;
     buffer << t.rdbuf();
     std::string templateStr = buffer.str();
 
+    // Rozdělení šablony na hlavičku a patičku před samotným generováním,
+    // aby se nemusel string splitovat v každém vlákně zvlášť.
     size_t insertPos = templateStr.rfind("</svg>");
     if (insertPos == std::string::npos) insertPos = templateStr.length();
 
@@ -231,17 +167,18 @@ void writeSvgMapsParallelOptimized(
 
     std::vector<int> months = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 
-    // Paralelizujeme napříč měsíci (max 12 vláken)
+    // Paralelní zpracování každého měsíce. Vlákna sdílí pouze read-only proměnné.
     std::for_each(std::execution::par, months.begin(), months.end(), [&](int month) {
         std::ostringstream allCircles;
 
-        for (const auto &[id, lat, lon] : filteredStations) {
+        for (const auto &[id, lat, lon]: filteredStations) {
             auto it = monthlyAverages.find(id);
             if (it == monthlyAverages.end()) continue;
 
             double sum = 0.0;
             int count = 0;
 
+            // Rychlý výpočet průměru in-line, šetří overhead volání externí funkce
             for (const auto &monthMap: it->second | std::views::values) {
                 auto mIt = monthMap.find(month);
 
@@ -256,13 +193,15 @@ void writeSvgMapsParallelOptimized(
                 const auto [r, g, b] = GetColor(avg, globalMin, globalMax);
                 auto [cx, cy] = GetCoordinates(lat, lon);
 
+                // Lokální stringstream bez rizika race condition mezi vlákny
                 allCircles << "<circle cx=\"" << cx
-                           << "\" cy=\"" << cy
-                           << "\" r=\"" << Config::STATION_RADIUS
-                           << "\" fill=\"rgb(" << r << "," << g << "," << b << ")\"/>\n";
+                        << "\" cy=\"" << cy
+                        << "\" r=\"" << Config::STATION_RADIUS
+                        << "\" fill=\"rgb(" << r << "," << g << "," << b << ")\"/>\n";
             }
         }
 
+        // Zápis výsledků specifických pro jedno vlákno a jeden měsíc
         const std::string outPath = outputDir + "/" + monthNames[month - 1] + ".svg";
         std::ofstream outFile(outPath);
 

@@ -1,23 +1,46 @@
+/**
+ * @file main.cpp
+ *
+ * @brief Hlavní vstupní bod aplikace pro zpracování meteorologických dat.
+ *
+ * Zajišťuje zpracování parametrů příkazové řádky, inicializaci, načtení dat
+ * (sériově či paralelně) a spuštění příslušné výpočetní logiky pro vyhodnocení
+ * a generování výstupů (CSV, SVG).
+ */
+
 #include <iostream>
 #include <string>
+#include <vector>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
-
-#include <iostream>
 
 #include "data/Station.h"
 #include "io/CsvParser.h"
 #include "core/AppRunner.h"
 #include "utils/Timer.h"
 
+/**
+ * @brief Hlavní funkce programu.
+ *
+ * Očekává přesně 3 parametry příkazové řádky:
+ * 1. Cestu k CSV souboru se stanicemi
+ * 2. Cestu k CSV souboru s měřeními
+ * 3. Přepínač režimu zpracování (--serial nebo --parallel)
+ *
+ * @param argc Počet argumentů zadaných z příkazové řádky.
+ * @param argv Pole textových řetězců reprezentujících argumenty.
+ * @return Nula při úspěšném běhu, -1 v případě chyby vstupních parametrů.
+ */
 int main(const int argc, char const *argv[]) {
 #ifdef _WIN32
+    // Nastavení kódování konzole na UTF-8 pro správné zobrazení (i případné diakritiky)
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 #endif
 
-    // Kontrola argumentů přesně podle zadání
+    // Kontrola počtu argumentů
     if (argc != 4) {
         std::cerr << "Pouziti: " << argv[0] << " <stanice.csv> <mereni.csv> <--serial|--parallel>\n";
         return -1;
@@ -27,62 +50,60 @@ int main(const int argc, char const *argv[]) {
     const std::string measurementsPath = argv[2];
     const std::string mode = argv[3];
 
+    // Validace zvoleného režimu zpracování
     if (mode != "--serial" && mode != "--parallel") {
         std::cerr << "Chyba: Neplatny prepinac '" << mode << "'. Pouzijte --serial nebo --parallel.\n";
         return -1;
     }
 
-    // Načtení dat dle zvoleného režimu (férové měření serial vs parallel)
-    std::cout << "Nacitam data ze souboru...\n";
+    // Příprava datových struktur
     std::vector<Station> stations;
     std::vector<Measurement> measurements;
 
-    // Vytvoříme a odstartujeme časovač
-    Timer timer;
-    timer.start();
+    // --- ZAČÁTEK MĚŘENÉHO BLOKU ---
+    // Timer se v konstruktoru automaticky spustí
+    Timer totalTimer;
 
+    // 1. Fáze: Načítání
+    Timer loadTimer;
     if (mode == "--serial") {
         stations = loadStationsSerial(stationPath);
         measurements = loadMeasurementSerial(measurementsPath);
-
-        runSerial(stations, measurements);
     } else {
         stations = loadStationsParallel(stationPath);
         measurements = loadMeasurementParallel(measurementsPath);
+    }
+    loadTimer.stop();
 
+    // 2. Fáze: Zpracování (výpočty, detekce anomálií, zápis souborů)
+    Timer processTimer;
+    if (mode == "--serial") {
+        runSerial(stations, measurements);
+    } else {
         runParallel(stations, measurements);
     }
-    std::cout << "Nacitam data ze souboru dokonceno!\n\n";
+    processTimer.stop();
 
-    /*
-    constexpr int runs = 5;
-    long soucet = 0;
-    for (int i = 0; i < runs; ++i)
-        // Spuštění konkrétní logiky podle třetího parametru
-        if (mode == "--serial") {
-            runSerial(stations, measurements);
-        } else if (mode == "--parallel") {
-            runParallel(stations, measurements);
-        }
+    totalTimer.stop();
+    // --- KONEC MĚŘENÉHO BLOKU ---
 
-        // Zastavíme časovač a vypíšeme výsledek
-        timer.stop();
-        //std::cout << "========================================\n";
-        std::cout << "Celkovy cas zpracovani: " << timer.elapsedSeconds() << " s ("
-                << timer.elapsedMilliseconds() << " ms)\n";
-        //std::cout << "========================================\n";
-        soucet += static_cast<long>(timer.elapsedSeconds() * 1000); // Převod na ms a sčítání
-        Sleep(1000);
-    }
+    // Veškeré výpisy probíhají až zde, kdy už jsou stopky zastaveny
+    std::cout << "================================================\n";
+    std::cout << "       METEOROLOGICKA ANALYZA DOKONCENA         \n";
+    std::cout << "================================================\n";
+    std::cout << " Rezim:            " << (mode == "--parallel" ? "PARALELNI" : "SERIOVY") << "\n";
+    std::cout << " Pocet stanic:     " << stations.size() << "\n";
+    std::cout << " Pocet mereni:     " << measurements.size() << "\n";
+    std::cout << "------------------------------------------------\n";
 
-    soucet /= runs; // Průměrný čas v ms
-    std::cout << soucet << std::endl;*/
+    // Nastavení formátu desetinných čísel
+    std::cout << std::fixed << std::setprecision(3);
 
-    // Zastavíme časovač a vypíšeme výsledek
-    timer.stop();
-
-    std::cout << "Cas zpracovani: " << timer.elapsedSeconds() << " s ("
-                << timer.elapsedMilliseconds() << " ms)\n";
+    std::cout << " Cas nacitani:     " << loadTimer.elapsedSeconds() << " s\n";
+    std::cout << " Cas zpracovani:   " << processTimer.elapsedSeconds() << " s\n";
+    std::cout << "------------------------------------------------\n";
+    std::cout << " CELKOVY CAS:      " << totalTimer.elapsedSeconds() << " s\n";
+    std::cout << "================================================\n";
 
     return 0;
 }

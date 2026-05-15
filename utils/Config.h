@@ -2,6 +2,14 @@
 
 #include <string>
 
+/**
+ * @file Config.h
+ *
+ * @brief Globální konfigurační konstanty aplikace.
+ *
+ * Obsahuje geografické hranice, mapovací konstanty pro SVG vizualizace
+ * a relativní cesty k výstupním adresářům a souborům.
+ */
 namespace Config {
     // Hranice mapy
     constexpr double LAT_MAX = 51.03806105663445;
@@ -9,19 +17,22 @@ namespace Config {
     constexpr double LON_MIN = 12.102209054269062;
     constexpr double LON_MAX = 18.866923511078615;
 
-    constexpr double PIXEL_X_MIN = 35.0;   // O kolik pixelů je mapa posunutá zleva
-    constexpr double PIXEL_X_MAX = 1175.0; // Kde mapa reálně končí vpravo
-    constexpr double PIXEL_Y_MIN = 25.0;   // Posun shora
-    constexpr double PIXEL_Y_MAX = 585.0;  // Kde končí dole
+    // Konfigurace ořezu
+    constexpr double PIXEL_X_MIN = 35.0;    // Skutečný začátek mapy zleva (posun)
+    constexpr double PIXEL_X_MAX = 1175.0;  // Pravý okraj mapy v pixelech
+    constexpr double PIXEL_Y_MIN = 25.0;    // Skutečný začátek mapy shora (posun)
+    constexpr double PIXEL_Y_MAX = 585.0;   // Spodní okraj mapy v pixelech
 
-    // SVG rozměry
+    // Rozměry SVG plátna
     constexpr int SVG_WIDTH = 1412;
     constexpr int SVG_HEIGHT = 809;
 
-    // Velikost bodu stanice
-    constexpr int STATION_RADIUS = 8;
+    // --- Vizuální nastavení ---
+    // Velikost vykresleného bodu reprezentujícího meteorologickou stanici
+    constexpr int STATION_RADIUS = 5;
 
-    // Cesta k slepé mapě
+    // --- Cesty k souborům a adresářům ---
+    // Relativní cesta k podkladové slepé mapě, na kterou se kreslí data
     constexpr auto MAP_SVG_PATH = "czmap.svg";
 
     constexpr std::string OUTPUT_DIR = "../maps/";
