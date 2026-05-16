@@ -154,5 +154,5 @@ Příspěvky komunity dělají z open-source tak úžasné místo k učení, ins
 Distribuováno pod licencí MIT. Pro více informací si prohlédněte soubor `LICENSE`.
 
 <div align="center">
-  <sub>Vytvořeno s ❤️ open-source komunitou.</sub>
+  <sub>Vytvořeno s ❤️ · 2026</sub>
 </div>
