@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "../data/Measurement.h"
-#include "../data/Station.h"
 
 std::vector<int> filterMinYears(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
@@ -21,3 +20,12 @@ std::vector<int> filterMinYearsParallel(
 std::vector<int> filterMinReadingsParallel(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
     int minPerYear);
+
+std::vector<int> filterStationsSerial(
+    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
+    int minYears,
+    int minPerYear);
+
+std::vector<int> filterStationsParallel(
+    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
+    int minYears, int minPerYear);

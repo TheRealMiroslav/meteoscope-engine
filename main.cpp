@@ -4,6 +4,8 @@
 #include <windows.h>
 #endif
 
+#include <iostream>
+
 #include "data/Station.h"
 #include "io/CsvParser.h"
 #include "core/AppRunner.h"
@@ -25,38 +27,62 @@ int main(const int argc, char const *argv[]) {
     const std::string measurementsPath = argv[2];
     const std::string mode = argv[3];
 
-    // Vytvoříme a odstartujeme časovač
-    Timer timer;
-    timer.start();
-
-    // Spuštění konkrétní logiky podle třetího parametru
-    if (mode == "--serial") {
-        // Načtení dat
-        std::cout << "Nacitam data ze souboru...\n";
-        const std::vector<Station> stations = loadStations(stationPath);
-        const std::vector<Measurement> measurements = loadMeasurement(measurementsPath);
-        std::cout << "Nacitam data ze souboru dokonceno!\n\n";
-
-        runSerial(stations, measurements);
-    } else if (mode == "--parallel") {
-        // Načtení dat
-        std::cout << "Nacitam data ze souboru...\n";
-        const std::vector<Station> stations = loadStationsParallel(stationPath);
-        const std::vector<Measurement> measurements = loadMeasurementParallel(measurementsPath);
-        std::cout << "Nacitam data ze souboru dokonceno!\n\n";
-
-        runParallel(stations, measurements);
-    } else {
+    if (mode != "--serial" && mode != "--parallel") {
         std::cerr << "Chyba: Neplatny prepinac '" << mode << "'. Pouzijte --serial nebo --parallel.\n";
         return -1;
     }
 
+    // Načtení dat dle zvoleného režimu (férové měření serial vs parallel)
+    std::cout << "Nacitam data ze souboru...\n";
+    std::vector<Station> stations;
+    std::vector<Measurement> measurements;
+
+    // Vytvoříme a odstartujeme časovač
+    Timer timer;
+    timer.start();
+
+    if (mode == "--serial") {
+        stations = loadStationsOptimized(stationPath);
+        measurements = loadMeasurementOptimized(measurementsPath);
+
+        runSerial(stations, measurements);
+    } else {
+        stations = loadStationsParallel(stationPath);
+        measurements = loadMeasurementParallel(measurementsPath);
+
+        runParallel(stations, measurements);
+    }
+    std::cout << "Nacitam data ze souboru dokonceno!\n\n";
+
+    /*
+    constexpr int runs = 5;
+    long soucet = 0;
+    for (int i = 0; i < runs; ++i)
+        // Spuštění konkrétní logiky podle třetího parametru
+        if (mode == "--serial") {
+            runSerial(stations, measurements);
+        } else if (mode == "--parallel") {
+            runParallel(stations, measurements);
+        }
+
+        // Zastavíme časovač a vypíšeme výsledek
+        timer.stop();
+        //std::cout << "========================================\n";
+        std::cout << "Celkovy cas zpracovani: " << timer.elapsedSeconds() << " s ("
+                << timer.elapsedMilliseconds() << " ms)\n";
+        //std::cout << "========================================\n";
+        soucet += static_cast<long>(timer.elapsedSeconds() * 1000); // Převod na ms a sčítání
+        Sleep(1000);
+    }
+
+    soucet /= runs; // Průměrný čas v ms
+    std::cout << soucet << std::endl;*/
+
     // Zastavíme časovač a vypíšeme výsledek
     timer.stop();
-    std::cout << "========================================\n";
-    std::cout << "Celkovy cas zpracovani: " << timer.elapsedSeconds() << " s ("
-            << timer.elapsedMilliseconds() << " ms)\n";
-    std::cout << "========================================\n";
+
+    std::cout << "Cas zpracovani: " << timer.elapsedSeconds() << " s ("
+                << timer.elapsedMilliseconds() << " ms)\n";
 
     return 0;
 }
