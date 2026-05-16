@@ -4,6 +4,6 @@
 
 #include "../data/Anomaly.h"
 
-void writeAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::string &path);
+void writeSerialAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::string &filePath);
 
-//void writeSvgMaps(stations, averages, globalMin, globalMax, mapSvgPath, outputDir);
+void writeParallelAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::string &filePath);

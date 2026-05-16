@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include "data/Station.h"
 #include "io/CsvParser.h"
@@ -23,20 +25,26 @@ int main(const int argc, char const *argv[]) {
     const std::string measurementsPath = argv[2];
     const std::string mode = argv[3];
 
-    // Načtení dat
-    std::cout << "Nacitam data ze souboru...\n";
-    const std::vector<Station> stations = loadStations(stationPath);
-    const std::vector<Measurement> measurements = loadMeasurement(measurementsPath);
-    std::cout << "Nacitam data ze souboru dokonceno!\n\n";
-
     // Vytvoříme a odstartujeme časovač
     Timer timer;
     timer.start();
 
     // Spuštění konkrétní logiky podle třetího parametru
     if (mode == "--serial") {
+        // Načtení dat
+        std::cout << "Nacitam data ze souboru...\n";
+        const std::vector<Station> stations = loadStations(stationPath);
+        const std::vector<Measurement> measurements = loadMeasurement(measurementsPath);
+        std::cout << "Nacitam data ze souboru dokonceno!\n\n";
+
         runSerial(stations, measurements);
     } else if (mode == "--parallel") {
+        // Načtení dat
+        std::cout << "Nacitam data ze souboru...\n";
+        const std::vector<Station> stations = loadStationsParallel(stationPath);
+        const std::vector<Measurement> measurements = loadMeasurementParallel(measurementsPath);
+        std::cout << "Nacitam data ze souboru dokonceno!\n\n";
+
         runParallel(stations, measurements);
     } else {
         std::cerr << "Chyba: Neplatny prepinac '" << mode << "'. Pouzijte --serial nebo --parallel.\n";

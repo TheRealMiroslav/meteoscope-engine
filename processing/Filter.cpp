@@ -5,53 +5,57 @@
 #include <mutex>
 #include <ranges>
 #include <execution>
+#include <unordered_map>
+#include <numeric>
 
-std::vector<int> filterMinYears(const std::map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
-                                const int minYears) {
+std::vector<int> filterMinYears(
+    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
+    const int minYears) {
     std::vector<int> result;
+    result.reserve(groupedMeasurements.size());
 
-    int lastYear = 0;
-    int counter = 0;
+    for (const auto &[stationId, yearMap]: groupedMeasurements) {
+        int lastYear = 0;
+        int counter = 0;
+        bool passed = false;
 
-    for (auto &[stationId, yearMap]: groupedMeasurements) {
         for (const auto &year: yearMap | std::views::keys) {
-            if (year != lastYear + 1) counter = 0;
-
+            counter = (year == lastYear + 1) ? counter + 1 : 1;
             lastYear = year;
-            counter++;
 
-            if (counter == minYears) break;
+            if (counter >= minYears) {
+                passed = true;
+                break;
+            }
         }
 
-        if (counter == minYears) {
+        if (passed) {
             result.push_back(stationId);
         }
-
-        lastYear = 0;
-        counter = 0;
     }
 
     return result;
 }
 
-std::vector<int> filterMinReadings(const std::map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
-                                   const int minPerYear) {
+std::vector<int> filterMinReadings(
+    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
+    const int minPerYear) {
     std::vector<int> result;
+    result.reserve(groupedMeasurements.size());
 
-    size_t numOfYears = 0;
-    size_t numOfMeasurements = 0;
+    for (const auto &[stationId, yearMap]: groupedMeasurements) {
+        size_t numOfYears = yearMap.size();
+        size_t numOfMeasurements = 0;
 
-    for (auto &[stationId, yearMap]: groupedMeasurements) {
-        numOfYears = yearMap.size();
-        numOfMeasurements = 0;
-
-        for (auto &[year, measurements]: yearMap) {
+        for (const auto &measurements: yearMap | std::views::values) {
             numOfMeasurements += measurements.size();
         }
 
-        const int avg = static_cast<int>(numOfMeasurements / numOfYears);
-        if (avg >= minPerYear) {
-            result.push_back(stationId);
+        if (numOfYears > 0) {
+            const int avg = static_cast<int>(numOfMeasurements / numOfYears);
+            if (avg >= minPerYear) {
+                result.push_back(stationId);
+            }
         }
     }
 
@@ -59,7 +63,7 @@ std::vector<int> filterMinReadings(const std::map<int, std::map<int, std::vector
 }
 
 std::vector<int> filterMinYearsParallel(
-    const std::map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
+    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
     const int minYears) {
     std::vector<int> stationIds;
     stationIds.reserve(groupedMeasurements.size());
@@ -68,8 +72,7 @@ std::vector<int> filterMinYearsParallel(
         stationIds.push_back(id);
     }
 
-    std::vector passed(stationIds.size(), false);
-
+    std::vector<int> passed(stationIds.size(), 0);
     std::vector<size_t> indices(stationIds.size());
     std::iota(indices.begin(), indices.end(), 0);
 
@@ -80,17 +83,14 @@ std::vector<int> filterMinYearsParallel(
         int lastYear = 0, counter = 0;
 
         for (const auto &year: yearMap | std::views::keys) {
-            if (year != lastYear + 1) {
-                counter = 0;
-            }
-
+            counter = (year == lastYear + 1) ? counter + 1 : 1;
             lastYear = year;
-            counter++;
 
-            if (counter == minYears) break;
+            if (counter >= minYears) {
+                passed[i] = 1;
+                break;
+            }
         }
-
-        passed[i] = (counter == minYears);
     });
 
     std::vector<int> result;
@@ -104,7 +104,7 @@ std::vector<int> filterMinYearsParallel(
 }
 
 std::vector<int> filterMinReadingsParallel(
-    const std::map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
+    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
     const int minPerYear) {
     std::vector<int> stationIds;
     stationIds.reserve(groupedMeasurements.size());
@@ -113,21 +113,21 @@ std::vector<int> filterMinReadingsParallel(
         stationIds.push_back(id);
     }
 
-    std::vector passed(stationIds.size(), false);
-
+    std::vector<int> passed(stationIds.size(), 0);
     std::vector<size_t> indices(stationIds.size());
     std::iota(indices.begin(), indices.end(), 0);
 
     std::for_each(std::execution::par, indices.begin(), indices.end(), [&](size_t i) {
         const auto &yearMap = groupedMeasurements.at(stationIds[i]);
-
         size_t total = 0;
 
         for (const auto &ms: yearMap | std::views::values) {
             total += ms.size();
         }
 
-        passed[i] = (static_cast<int>(total / yearMap.size()) > minPerYear);
+        if (!yearMap.empty() && static_cast<int>(total / yearMap.size()) >= minPerYear) {
+            passed[i] = 1;
+        }
     });
 
     std::vector<int> result;
