@@ -1,35 +1,40 @@
-cmake_minimum_required(VERSION 3.20)
-project(UPP_Semestralka_1)
+cmake_minimum_required (VERSION 3.8)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Ruční vypsání souborů - máš nad tím 100% kontrolu
-add_executable(UPP_Semestralka_1
+if (POLICY CMP0141)
+    cmake_policy(SET CMP0141 NEW)
+    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+endif()
+
+project ("upp_sp1")
+
+add_executable(upp_sp1
         main.cpp
-        io/CsvParser.cpp
-        io/CsvWriter.cpp
-        output/ColorMapper.cpp
-        output/CoordMapper.cpp
-        output/SvgWriter.cpp
-        processing/Aggregator.cpp
-        processing/AnomalyDetector.cpp
-        processing/Filter.cpp
-        data/Station.h
-        data/Measurement.h
-        io/CsvWriter.h
-        processing/Filter.h
-        processing/Aggregator.h
-        data/Anomaly.h
-        processing/AnomalyDetector.h
-        output/SvgWriter.h
-        utils/Config.h
-        output/CoordMapper.h
-        output/ColorMapper.h
-        output/SvgWriter.cpp
-        core/AppRunner.h
-        core/AppRunner.cpp
-        utils/Timer.h
+        src/core/AppRunner.h
+        src/core/AppRunner.cpp
+        src/io/CsvParser.h
+        src/io/CsvParser.cpp
+        src/io/CsvWriter.h
+        src/io/CsvWriter.cpp
+        src/processing/Aggregator.h
+        src/processing/Aggregator.cpp
+        src/processing/AnomalyDetector.h
+        src/processing/AnomalyDetector.cpp
+        src/processing/Filter.h
+        src/processing/Filter.cpp
+        src/output/ColorMapper.h
+        src/output/ColorMapper.cpp
+        src/output/CoordMapper.h
+        src/output/CoordMapper.cpp
+        src/output/SvgWriter.h
+        src/output/SvgWriter.cpp
+        src/data/Station.h
+        src/data/Measurement.h
+        src/data/Anomaly.h
+        src/utils/Config.h
+        src/utils/Timer.h
 )
 
-find_package(OpenMP REQUIRED)
-target_link_libraries(UPP_Semestralka_1 PUBLIC OpenMP::OpenMP_CXX)
+target_include_directories(upp_sp1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

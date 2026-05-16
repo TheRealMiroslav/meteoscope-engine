@@ -1,11 +1,9 @@
 #include "AppRunner.h"
 
-#include <iostream>
 #include <map>
 #include <algorithm>
 #include <execution>
 #include <filesystem>
-#include <iterator>
 #include <limits>
 #include <ranges>
 #include <thread>
@@ -19,10 +17,19 @@
 #include "../output/SvgWriter.h"
 #include "../utils/Config.h"
 
+/**
+ * @brief Sériová verze hlavního procesu pro zpracování meteorologických dat.
+ *
+ * Funkce postupně seskupí data, vyfiltruje validní stanice (podle počtu let a záznamů),
+ * vypočítá měsíční průměry, najde globální extrémy, detekuje anomálie a následně
+ * vygeneruje CSV reporty a SVG mapy. Vše probíhá sekvenčně v jednom vlákně.
+ *
+ * @param stations Vektor všech dostupných meteorologických stanic.
+ * @param measurements Vektor všech naměřených hodnot ke zpracování.
+ */
 void runSerial(const std::vector<Station> &stations, const std::vector<Measurement> &measurements) {
-    //std::cout << "Zpracovavam data (Seriove)...\n\n";
-
     // 1. Seskupení dat
+    // Vytvoření struktury: ID stanice -> (Rok -> Naměřené hodnoty)
     std::unordered_map<int, std::map<int, std::vector<Measurement> > > groupedMeasurements;
     groupedMeasurements.reserve(stations.size());
 
@@ -30,25 +37,16 @@ void runSerial(const std::vector<Station> &stations, const std::vector<Measureme
         groupedMeasurements[measurement.id][measurement.year].push_back(measurement);
     }
 
-    // 2. Filtrování
-    //std::cout << "Filtrace data...\n";
-    std::vector<int> passedFirstFilter = filterMinYears(groupedMeasurements, 5);
-    std::vector<int> passedSecondFilter = filterMinReadings(groupedMeasurements, 100);
-    //std::cout << "Filtrace data dokončena!\n\n";
-
-    std::ranges::sort(passedFirstFilter);
-    std::ranges::sort(passedSecondFilter);
-
-    std::vector<int> passedFilters;
-    std::ranges::set_intersection(passedFirstFilter, passedSecondFilter, std::back_inserter(passedFilters));
+    // 2. Filtrování (jeden spojený průchod)
+    // Očištění dat od stanic, které nemají dostatečnou historii nebo hustotu měření
+    std::vector<int> passedFilters = filterStationsSerial(groupedMeasurements, 5, 100);
 
     // 3. Výpočet průměrů
-    //std::cout << "Výpočet průměrů...\n";
+    // Agregace naměřených hodnot na měsíční bázi pro validní stanice
     auto monthlyAverages = computeMonthlyAverages(groupedMeasurements, passedFilters);
-    //std::cout << "Výpočet průměrů dokončen!\n\n";
 
     // 4. Nalezení extrémů
-    //std::cout << "Hledání extrémů...\n";
+    // Vyhledání absolutního minima a maxima ze všech vypočítaných průměrů pro správné nastavení barevné škály map
     double globalMin = std::numeric_limits<double>::max();
     double globalMax = std::numeric_limits<double>::lowest();
 
@@ -60,16 +58,14 @@ void runSerial(const std::vector<Station> &stations, const std::vector<Measureme
             }
         }
     }
-    //std::cout << "Hledání extrémů dokončeno!\n\n";
 
     // 5. Detekce a zápis anomálií
-    //std::cout << "Zpracovávání anomálií...\n";
+    // Vyhodnocení průměrů, nalezení výkyvů (anomálií) a export do CSV reportu
     const std::vector<Anomaly> anomalies = detectAnomalies(monthlyAverages);
     writeSerialAnomaliesCsv(anomalies, Config::OUTPUT_SERIAL_FLUCTUATION_DIR);
-    //std::cout << "Zpracovávání anomálií dokončena!\n\n";
 
     // 6. Filtrace stanic pro mapy a zápis SVG
-    //std::cout << "Vytváření map...\n";
+    // Odfiltrování stanic, které neprošly počátečními filtry, pro potřeby vizualizace
     const std::unordered_set<int> passedSet(passedFilters.begin(), passedFilters.end());
     std::vector<Station> filteredStations;
 
@@ -79,30 +75,35 @@ void runSerial(const std::vector<Station> &stations, const std::vector<Measureme
         }
     }
 
-    writeSvgMaps(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH,
-                 Config::OUTPUT_SERIAL_MAPS_DIR);
-    //std::cout << "Vytváření map dokončeno!\n\n";
-
-    //std::cout << "Seriove zpracovani hotovo!\n\n";
+    // Vykreslení SVG map s využitím zjištěných extrémů pro normalizaci teplotní škály
+    writeSvgMapsSerial(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH,
+                       Config::OUTPUT_SERIAL_MAPS_DIR);
 }
 
-/** ================================================================================================================ */
-/** ================================================================================================================ */
-/** ================================================================================================================ */
-
+/**
+ * @brief Paralelní verze hlavního procesu pro zpracování meteorologických dat.
+ *
+ * Funkce provádí stejné kroky jako `runSerial`, ale využívá vícevláknové zpracování
+ * (std::thread, std::execution::par) k optimalizaci výpočtů a agregace dat.
+ * Obsahuje map-reduce logiku pro bezpečné rozdělení a sloučení dat mezi vlákny.
+ *
+ * @param stations Vektor všech dostupných meteorologických stanic.
+ * @param measurements Vektor všech naměřených hodnot ke zpracování.
+ */
 void runParallel(const std::vector<Station> &stations, const std::vector<Measurement> &measurements) {
-    //std::cout << "Zpracovavam data (Paralelně)...\n\n";
-
     // 1. Seskupení dat (Paralelne)
-    //std::cout << "Seskupovani dat (Paralelne)...\n";
+    // Zjištění počtu dostupných hardwarových vláken (minimálně 1)
     const size_t nThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
 
-    // Použijeme tvůj koncept, ale vnější mapa je unordered_map (O(1) insert)
+    // Každé vlákno bude mít vlastní instanci vnější unordered_map pro zamezení datových závodů (data races).
+    // Použití unordered_map poskytuje asymptotickou složitost O(1) pro vložení.
     std::vector<std::unordered_map<int, std::map<int, std::vector<Measurement> > > > localMaps(nThreads);
 
     std::vector<std::thread> threads;
+    // Výpočet velikosti bloku dat připadajícího na jedno vlákno
     const size_t chunkSize = (measurements.size() + nThreads - 1) / nThreads;
 
+    // Fáze mapování: Rozdělení vstupních měření na bloky (chunks) a jejich zpracování v oddělených vláknech
     for (size_t t = 0; t < nThreads; t++) {
         threads.emplace_back([&, t]() {
             const size_t start = t * chunkSize;
@@ -114,9 +115,11 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
             }
         });
     }
+
+    // Vyčkání na dokončení všech vláken
     for (auto &thread: threads) thread.join();
 
-    // Místo stavění setu z localMaps prostě využijeme vstupní vektor `stations`
+    // Extrakce všech unikátních ID stanic ze všech lokálních map (agregace nalezených klíčů)
     std::unordered_set<int> allStationIdsSet;
     for (const auto &localMap: localMaps) {
         for (const auto &sid: localMap | std::views::keys) {
@@ -125,11 +128,13 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
     }
 
     std::vector<int> allStationIds(allStationIdsSet.begin(), allStationIdsSet.end());
+    // Předalokace výsledného vektoru pro fázovou redukci (každý index odpovídá jedné stanici)
     std::vector<std::map<int, std::vector<Measurement> > > mergedVec(allStationIds.size());
     std::vector<size_t> mergeIndices(allStationIds.size());
-    std::iota(mergeIndices.begin(), mergeIndices.end(), 0);
+    std::iota(mergeIndices.begin(), mergeIndices.end(), 0); // Naplnění indexy 0, 1, ..., N-1
 
-    // Každý thread sloučí data jedné stanice ze všech local maps do svého slotu v mergedVec
+    // Fáze redukce: Paralelní procházení přes indexy stanic.
+    // Každé vlákno zpracuje jednu stanici a agreguje její data ze VŠECH lokálních vláknových map do jednoho výsledku.
     std::for_each(std::execution::par, mergeIndices.begin(), mergeIndices.end(), [&](size_t i) {
         const int sid = allStationIds[i];
 
@@ -140,12 +145,14 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
 
             for (const auto &[year, ms]: it->second) {
                 auto &target = mergedVec[i][year];
+
+                // Sloučení (append) vektorů měření pro daný rok
                 target.insert(target.end(), ms.begin(), ms.end());
             }
         }
     });
 
-    // Finální sloučení do výsledné struktury
+    // Finální sestavení hlavní struktury groupedMeasurements přesunem (move sémantika) agregovaných dat z redukce
     std::unordered_map<int, std::map<int, std::vector<Measurement> > > groupedMeasurements;
     groupedMeasurements.reserve(allStationIds.size());
 
@@ -154,28 +161,23 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
             groupedMeasurements[allStationIds[i]] = std::move(mergedVec[i]);
         }
     }
-    //std::cout << "Seskupovani dokonceno!\n\n";
 
     // 2. Filtrování (jeden spojený průchod)
-    //std::cout << "Filtrace data...\n";
+    // Multivláknová filtrace stanic na základě minimálních požadavků (5 let, 100 záznamů celkově)
     std::vector<int> passedFilters = filterStationsParallel(groupedMeasurements, 5, 100);
-    //std::cout << "Filtrace data dokončena!\n\n";
 
     // 3. Výpočet průměrů
-    //std::cout << "Výpočet průměrů...\n";
+    // Paralelní zpracování výpočtu měsíčních průměrů teplot pro vyfiltrované stanice
     auto monthlyAverages = computeMonthlyAveragesParallel(groupedMeasurements, passedFilters);
-    //std::cout << "Výpočet průměrů dokončen!)\n\n";
 
     // 4. Nalezení extrémů
-    //std::cout << "Hledání extrémů...\n";
-
     std::vector<int> activeStationIds;
     activeStationIds.reserve(monthlyAverages.size());
     for (const auto &sid: monthlyAverages | std::views::keys) activeStationIds.push_back(sid);
 
-    // Každé vlákno dostane vlastní místo pro uložení {min, max}
-    std::vector<std::pair<double, double> > localExtremes(activeStationIds.size(),
-                                                          {
+    // Příprava struktury pro lokální extrémy. Každé vlákno si zapíše lokální {min, max} na index odpovídající jeho zpracovávané stanici.
+    // Tímto se zamezuje potřebě zámků (mutexů) při paralelizaci.
+    std::vector<std::pair<double, double> > localExtremes(activeStationIds.size(), {
                                                               std::numeric_limits<double>::max(),
                                                               std::numeric_limits<double>::lowest()
                                                           });
@@ -183,7 +185,7 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
     std::vector<size_t> indices(activeStationIds.size());
     std::iota(indices.begin(), indices.end(), 0);
 
-    // Každé vlákno zpracuje jednu stanici a uloží lokální min/max do svého slotu v localExtremes
+    // Výpočet lokálních extrémů paralelně přes všechny stanice
     std::for_each(std::execution::par, indices.begin(), indices.end(), [&](const size_t i) {
         double lMin = std::numeric_limits<double>::max();
         double lMax = std::numeric_limits<double>::lowest();
@@ -194,37 +196,39 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
                 if (avg > lMax) lMax = avg;
             }
         }
+
         localExtremes[i] = {lMin, lMax};
     });
 
     double globalMin = std::numeric_limits<double>::max();
     double globalMax = std::numeric_limits<double>::lowest();
 
-    // Rychlý sériový merge výsledků vláken
+    // Rychlý sekvenční průchod (redukce) přes shromážděná lokální minima a maxima k zisku konečného globálního extrému.
     for (const auto &[fst, snd]: localExtremes) {
         if (fst < globalMin) globalMin = fst;
         if (snd > globalMax) globalMax = snd;
     }
-    //std::cout << "Hledání extrémů dokončeno!\n\n";
 
     // 5. Detekce a zápis anomálií
-    //std::cout << "Zpracovávání anomálií...\n";
+    // Identifikace teplotních anomálií pomocí paralelní implementace a asynchronní/blokový zápis do CSV
     const std::vector<Anomaly> anomalies = detectAnomaliesParallel(monthlyAverages);
     writeParallelAnomaliesCsv(anomalies, Config::OUTPUT_PARALLEL_FLUCTUATION_DIR);
-    //std::cout << "Zpracovávání anomálií dokončena!\n\n";
 
     // 6. Filtrace stanic pro mapy a zápis SVG
-    //std::cout << "Vytváření map...\n";
+    // Vytvoření hash setu pro vysoce výkonné O(1) vyhledávání propustných stanic
     const std::unordered_set<int> passedSet(passedFilters.begin(), passedFilters.end());
 
     std::vector<Station> filteredStations;
     filteredStations.resize(stations.size());
 
+    // Paralelní filtrování vstupního vektoru stanic dle passedSet s přesunem do vektoru filteredStations
     auto it = std::copy_if(std::execution::par, stations.begin(), stations.end(), filteredStations.begin(),
                            [&](const Station &s) { return passedSet.contains(s.id); });
 
+    // Odstranění volného nevyužitého místa vzniklého po filtraci
     filteredStations.erase(it, filteredStations.end());
 
+    // Zajištění existence výstupních složek pro zápis
     if (!std::filesystem::exists(Config::OUTPUT_DIR)) {
         std::filesystem::create_directories(Config::OUTPUT_DIR);
     }
@@ -233,9 +237,7 @@ void runParallel(const std::vector<Station> &stations, const std::vector<Measure
         std::filesystem::create_directories(Config::OUTPUT_PARALLEL_MAPS_DIR);
     }
 
-    writeSvgMapsParallelOptimized(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH,
-                                  Config::OUTPUT_PARALLEL_MAPS_DIR);
-    //std::cout << "Vytváření map dokončeno!\n\n";
-
-    //std::cout << "Hotovo!\n\n";
+    // Spuštění vysoce optimalizovaného paralelního zápisu SVG souborů
+    writeSvgMapsParallel(filteredStations, monthlyAverages, globalMin, globalMax, Config::MAP_SVG_PATH,
+                         Config::OUTPUT_PARALLEL_MAPS_DIR);
 }

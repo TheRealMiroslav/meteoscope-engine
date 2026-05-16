@@ -1,0 +1,144 @@
+Meteorologicka analyza - casy zpracovani podle velikosti datasetu
+
+Small Dataset
+------------------------------------------------
+       DETAILNI MERENI FAZI (SERIOVY BEH)
+------------------------------------------------
+ 1. Seskupeni dat:       0.12405 s
+ 2. Filtrovani stanic:   0.00024 s
+ 3. Vypocet prumeru:     0.02537 s
+ 4. Hledani extremu:     0.00193 s
+ 5. Detekce anomalii:    0.00878 s
+ 6. Vykresleni SVG map:  0.02758 s
+------------------------------------------------
+================================================
+ METEOROLOGICKA ANALYZA DOKONCENA (SERIOVY BEH)
+================================================
+ Rezim:            SERIOVY
+ Pocet stanic:     512
+ Pocet mereni:     4701195
+------------------------------------------------
+ Cas nacitani:     0.701 s
+ Cas zpracovani:   0.207 s
+------------------------------------------------
+ CELKOVY CAS:      0.909 s
+================================================
+
+------------------------------------------------
+      DETAILNI MERENI FAZI (PARALELNI BEH)
+------------------------------------------------
+ 1. Seskupeni dat:       0.03568 s
+ 2. Filtrovani stanic:   0.00014 s
+ 3. Vypocet prumeru:     0.00433 s
+ 4. Hledani extremu:     0.00039 s
+ 5. Detekce anomalii:    0.00217 s
+ 6. Vykresleni SVG map:  0.02048 s
+------------------------------------------------
+================================================
+METEOROLOGICKA ANALYZA DOKONCENA (PARALELNI BEH)
+================================================
+ Rezim:            PARALELNI
+ Pocet stanic:     512
+ Pocet mereni:     4701195
+------------------------------------------------
+ Cas nacitani:     0.200 s
+ Cas zpracovani:   0.091 s
+------------------------------------------------
+ CELKOVY CAS:      0.291 s
+================================================
+
+
+Medium Dataset
+------------------------------------------------
+       DETAILNI MERENI FAZI (SERIOVY BEH)
+------------------------------------------------
+ 1. Seskupeni dat:       0.55279 s
+ 2. Filtrovani stanic:   0.00115 s
+ 3. Vypocet prumeru:     0.11770 s
+ 4. Hledani extremu:     0.00824 s
+ 5. Detekce anomalii:    0.03292 s
+ 6. Vykresleni SVG map:  0.08861 s
+------------------------------------------------
+================================================
+ METEOROLOGICKA ANALYZA DOKONCENA (SERIOVY BEH)
+================================================
+ Rezim:            SERIOVY
+ Pocet stanic:     2012
+ Pocet mereni:     21078707
+------------------------------------------------
+ Cas nacitani:     3.137 s
+ Cas zpracovani:   0.897 s
+------------------------------------------------
+ CELKOVY CAS:      4.034 s
+================================================
+
+------------------------------------------------
+      DETAILNI MERENI FAZI (PARALELNI BEH)
+------------------------------------------------
+ 1. Seskupeni dat:       0.13278 s
+ 2. Filtrovani stanic:   0.00026 s
+ 3. Vypocet prumeru:     0.01597 s
+ 4. Hledani extremu:     0.00148 s
+ 5. Detekce anomalii:    0.00549 s
+ 6. Vykresleni SVG map:  0.07057 s
+------------------------------------------------
+================================================
+METEOROLOGICKA ANALYZA DOKONCENA (PARALELNI BEH)
+================================================
+ Rezim:            PARALELNI
+ Pocet stanic:     2012
+ Pocet mereni:     21078707
+------------------------------------------------
+ Cas nacitani:     0.874 s
+ Cas zpracovani:   0.383 s
+------------------------------------------------
+ CELKOVY CAS:      1.257 s
+================================================
+
+
+Large Dataset
+------------------------------------------------
+       DETAILNI MERENI FAZI (SERIOVY BEH)
+------------------------------------------------
+ 1. Seskupeni dat:       1.62340 s
+ 2. Filtrovani stanic:   0.00350 s
+ 3. Vypocet prumeru:     0.35753 s
+ 4. Hledani extremu:     0.02494 s
+ 5. Detekce anomalii:    0.09507 s
+ 6. Vykresleni SVG map:  0.25336 s
+------------------------------------------------
+================================================
+ METEOROLOGICKA ANALYZA DOKONCENA (SERIOVY BEH)
+================================================
+ Rezim:            SERIOVY
+ Pocet stanic:     5512
+ Pocet mereni:     61623333
+------------------------------------------------
+ Cas nacitani:     9.340 s
+ Cas zpracovani:   2.665 s
+------------------------------------------------
+ CELKOVY CAS:      12.005 s
+================================================
+
+------------------------------------------------
+      DETAILNI MERENI FAZI (PARALELNI BEH)
+------------------------------------------------
+ 1. Seskupeni dat:       0.37987 s
+ 2. Filtrovani stanic:   0.00067 s
+ 3. Vypocet prumeru:     0.04539 s
+ 4. Hledani extremu:     0.00432 s
+ 5. Detekce anomalii:    0.01405 s
+ 6. Vykresleni SVG map:  0.21660 s
+------------------------------------------------
+================================================
+METEOROLOGICKA ANALYZA DOKONCENA (PARALELNI BEH)
+================================================
+ Rezim:            PARALELNI
+ Pocet stanic:     5512
+ Pocet mereni:     61623333
+------------------------------------------------
+ Cas nacitani:     2.574 s
+ Cas zpracovani:   1.276 s
+------------------------------------------------
+ CELKOVY CAS:      3.850 s
+================================================

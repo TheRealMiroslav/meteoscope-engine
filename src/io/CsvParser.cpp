@@ -9,99 +9,42 @@
 #include <system_error>
 #include <thread>
 
+// ==============================================================================
+// Sériové zpracování
+// ==============================================================================
 
-std::vector<Station> loadStations(const std::string &path) {
-    std::vector<Station> result;
-    std::ifstream file(path);
-
-    std::string line;
-    std::getline(file, line);
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string token;
-
-        Station station{};
-
-        std::getline(ss, token, ';');
-        station.id = std::stoi(token);
-
-        // name skip
-        std::getline(ss, token, ';');
-
-        std::getline(ss, token, ';');
-        station.lat = std::stod(token);
-
-        std::getline(ss, token, ';');
-        station.lon = std::stod(token);
-
-        result.push_back(station);
-    }
-
-    return result;
-}
-
-std::vector<Measurement> loadMeasurement(const std::string &path) {
-    std::vector<Measurement> result;
-    std::ifstream file(path);
-
-    std::string line;
-    std::getline(file, line);
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string token;
-
-        Measurement measurement{};
-
-        std::getline(ss, token, ';');
-        measurement.id = std::stoi(token);
-
-        std::getline(ss, token, ';');
-        measurement.ordinal = std::stoi(token);
-
-        std::getline(ss, token, ';');
-        measurement.year = std::stoi(token);
-
-        std::getline(ss, token, ';');
-        measurement.month = std::stoi(token);
-
-        // day skip
-        std::getline(ss, token, ';');
-
-        //value
-        std::getline(ss, token, ';');
-        std::ranges::replace(token, ',', '.');
-
-        if (!token.empty() && token.back() == '\r') {
-            token.pop_back();
-        }
-
-        measurement.value = std::stof(token);
-
-        result.push_back(measurement);
-    }
-
-    return result;
-}
-
-std::vector<Station> loadStationsOptimized(const std::string &path) {
+/**
+ * @brief Načte seznam meteorologických stanic ze zadaného CSV souboru (sériově).
+ *
+ * @param path Cesta k CSV souboru obsahujícímu data o stanicích.
+ *
+ * @return std::vector<Station> Vektor naparsovaných stanic. V případě selhání vrací prázdný vektor.
+ */
+std::vector<Station> loadStationsSerial(const std::string &path) {
+    // Otevření souboru s příznakem ate (at end) pro rychlé zjištění velikosti
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) return {};
 
     const std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
 
+    // Načtení celého souboru do paměti (alokováno naráz pro minimalizaci I/O úzkých hrdel)
     std::string buffer(size, '\0');
     if (!file.read(buffer.data(), size)) return {};
 
+    // Vyhledání a přeskočení hlavičky CSV souboru
     const size_t headerEnd = buffer.find('\n');
     if (headerEnd == std::string::npos) return {};
 
     std::vector<Station> result;
+    // Předběžná alokace paměti založená na heuristice (cca 50 bajtů na řádek),
+    // zamezuje zbytečným realokacím vektoru při vkládání.
     result.reserve(size / 50);
 
     const char *p = buffer.data() + headerEnd + 1;
     const char *end = buffer.data() + size;
 
+    // Line-by-line manuální parsování pro maximální výkon
     while (p < end) {
         const char *lineEnd = p;
         while (lineEnd < end && *lineEnd != '\n') lineEnd++;
@@ -110,21 +53,21 @@ std::vector<Station> loadStationsOptimized(const std::string &path) {
             Station station{};
             const char *curr = p;
 
-            // ID
+            // Extrakce ID stanice
             auto [ptr1, ec1] = std::from_chars(curr, lineEnd, station.id);
             curr = ptr1;
             if (curr < lineEnd && *curr == ';') ++curr;
 
-            // Name (přeskočíme)
+            // Přeskočení sloupce s názvem stanice (data nejsou vyžadována)
             while (curr < lineEnd && *curr != ';') ++curr;
             if (curr < lineEnd && *curr == ';') ++curr;
 
-            // Lat
+            // Extrakce zeměpisné šířky (Latitude)
             auto [ptr2, ec2] = std::from_chars(curr, lineEnd, station.lat);
             curr = ptr2;
             if (curr < lineEnd && *curr == ';') ++curr;
 
-            // Lon
+            // Extrakce zeměpisné délky (Longitude)
             std::from_chars(curr, lineEnd, station.lon);
 
             result.push_back(station);
@@ -135,7 +78,14 @@ std::vector<Station> loadStationsOptimized(const std::string &path) {
     return result;
 }
 
-std::vector<Measurement> loadMeasurementOptimized(const std::string &path) {
+/**
+ * @brief Načte naměřené hodnoty ze zadaného CSV souboru (sériově).
+ *
+ * @param path Cesta k CSV souboru obsahujícímu měření.
+ *
+ * @return std::vector<Measurement> Vektor naparsovaných měření. V případě selhání vrací prázdný vektor.
+ */
+std::vector<Measurement> loadMeasurementSerial(const std::string &path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) return {};
 
@@ -149,6 +99,7 @@ std::vector<Measurement> loadMeasurementOptimized(const std::string &path) {
     if (headerEnd == std::string::npos) return {};
 
     std::vector<Measurement> result;
+    // Heuristická rezervace paměti (cca 30 znaků na záznam o měření)
     result.reserve(size / 30);
 
     const char *p = buffer.data() + headerEnd + 1;
@@ -162,27 +113,29 @@ std::vector<Measurement> loadMeasurementOptimized(const std::string &path) {
             Measurement m{};
             const char *curr = p;
 
-            // id
+            // ID stanice
             auto [ptr1, ec1] = std::from_chars(curr, lineEnd, m.id);
-            curr = ptr1 + 1; // přeskočíme ';'
+            curr = ptr1 + 1; // Přímý posun za středník
 
-            // ordinal
+            // Pořadové číslo / Ordinal
             auto [ptr2, ec2] = std::from_chars(curr, lineEnd, m.ordinal);
             curr = ptr2 + 1;
 
-            // year
+            // Rok
             auto [ptr3, ec3] = std::from_chars(curr, lineEnd, m.year);
             curr = ptr3 + 1;
 
-            // month
+            // Měsíc
             auto [ptr4, ec4] = std::from_chars(curr, lineEnd, m.month);
             curr = ptr4 + 1;
 
-            // day (přeskočíme)
+            // Den měření - pro cílovou strukturu pravděpodobně nepotřebný, přeskakujeme
             while (curr < lineEnd && *curr != ';') ++curr;
             ++curr;
 
-            // value
+            // Hodnota měření (zpracování desetinné čárky)
+            // std::from_chars striktně vyžaduje tečku pro oddělení desetinných míst,
+            // proto nahrazujeme znak ',' za '.' přímo do lokálního bufferu.
             char valBuf[32];
             size_t len = 0;
             while (curr < lineEnd && *curr != '\r' && len < 31) {
@@ -198,6 +151,20 @@ std::vector<Measurement> loadMeasurementOptimized(const std::string &path) {
     return result;
 }
 
+// ==============================================================================
+// Paralelní zpracování
+// ==============================================================================
+
+/**
+ * @brief Načte naměřené hodnoty ze zadaného CSV souboru s využitím více vláken.
+ *
+ * Funkce rozdělí soubor na logické bloky a zpracuje je paralelně pomocí dostupných
+ * hardwarových vláken, což výrazně zrychluje parsování u rozsáhlých datových sad.
+ *
+ * @param path Cesta k CSV souboru obsahujícímu měření.
+ *
+ * @return std::vector<Measurement> Vektor naparsovaných měření. V případě selhání vrací prázdný vektor.
+ */
 std::vector<Measurement> loadMeasurementParallel(const std::string &path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) return {};
@@ -212,16 +179,16 @@ std::vector<Measurement> loadMeasurementParallel(const std::string &path) {
     if (headerEnd == std::string::npos) return {};
     size_t startPos = headerEnd + 1;
 
-    // Výpočet hranic pro jednotlivá vlákna
+    // Rozdělení datového bufferu na rovnoměrné části (tzv. chunks) podle počtu dostupných vláken
     const size_t nThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
     std::vector<std::pair<const char *, const char *> > chunks;
-
     const size_t approxChunk = (size - startPos) / nThreads;
 
     for (size_t i = 0; i < nThreads; ++i) {
         size_t endPos = (i == nThreads - 1) ? size : startPos + approxChunk;
 
-        // Zarovnání endPos na konec řádku, abychom nepřerušili data v půlce
+        // Bezpečnostní zarovnání: Konec bloku se posouvá na konec nejbližšího řádku (\n),
+        // aby nedošlo k přeříznutí datového záznamu (řádku) napůl mezi dvěma vlákny.
         if (endPos < size) {
             while (endPos < size && buffer[endPos] != '\n') {
                 endPos++;
@@ -235,49 +202,42 @@ std::vector<Measurement> loadMeasurementParallel(const std::string &path) {
         startPos = endPos;
     }
 
-    // Paralelní parsování v chunkách
     std::vector<std::vector<Measurement> > localResults(chunks.size());
     std::vector<std::thread> threads;
 
+    // Spuštění parsování v dedikovaných vláknech. Každé vlákno zapisuje výhradně
+    // do svého vektoru v localResults, aby nevznikl data race.
     for (size_t i = 0; i < chunks.size(); ++i) {
         threads.emplace_back([i, &chunks, &localResults]() {
             const char *p = chunks[i].first;
             const char *end = chunks[i].second;
             auto &localVec = localResults[i];
 
-            // Hrubý odhad kapacity (cca 30 znaků/řádek)
             localVec.reserve((end - p) / 30);
 
             while (p < end) {
                 const char *lineEnd = p;
-                // Najdeme konec aktuálního řádku
                 while (lineEnd < end && *lineEnd != '\n') lineEnd++;
 
                 if (lineEnd > p) {
                     Measurement m{};
                     const char *curr = p;
 
-                    // id
                     auto [ptr1, ec1] = std::from_chars(curr, lineEnd, m.id);
-                    curr = ptr1 + 1; // přeskočíme ';'
+                    curr = ptr1 + 1;
 
-                    // ordinal
                     auto [ptr2, ec2] = std::from_chars(curr, lineEnd, m.ordinal);
                     curr = ptr2 + 1;
 
-                    // year
                     auto [ptr3, ec3] = std::from_chars(curr, lineEnd, m.year);
                     curr = ptr3 + 1;
 
-                    // month
                     auto [ptr4, ec4] = std::from_chars(curr, lineEnd, m.month);
                     curr = ptr4 + 1;
 
-                    // day (přeskočíme)
                     while (curr < lineEnd && *curr != ';') ++curr;
                     ++curr;
 
-                    // value
                     char valBuf[32];
                     size_t len = 0;
                     while (curr < lineEnd && *curr != '\r' && len < 31) {
@@ -289,15 +249,15 @@ std::vector<Measurement> loadMeasurementParallel(const std::string &path) {
                     localVec.push_back(m);
                 }
 
-                p = lineEnd + 1; // Posun na další řádek
+                p = lineEnd + 1;
             }
         });
     }
 
-    // Čekáme na dokončení všech vláken
+    // Synchronizace všech vláken před finální fází
     for (auto &t: threads) t.join();
 
-    // Sériové spojení výsledků
+    // Redukční fáze: Kalkulace celkové velikosti pro přesnou alokaci
     size_t totalMeasurements = 0;
     for (const auto &res: localResults) {
         totalMeasurements += res.size();
@@ -306,7 +266,7 @@ std::vector<Measurement> loadMeasurementParallel(const std::string &path) {
     std::vector<Measurement> result;
     result.reserve(totalMeasurements);
 
-    // Rychlý přesun naparsovaných dat z jednotlivých vláken do finálního vektoru
+    // Přesun (move) hotových datových vektorů z jednotlivých vláken do společného návratového vektoru
     for (auto &res: localResults) {
         result.insert(result.end(), std::make_move_iterator(res.begin()), std::make_move_iterator(res.end()));
     }
@@ -314,6 +274,13 @@ std::vector<Measurement> loadMeasurementParallel(const std::string &path) {
     return result;
 }
 
+/**
+ * @brief Načte seznam meteorologických stanic ze zadaného CSV souboru s využitím více vláken.
+ *
+ * @param path Cesta k CSV souboru obsahujícímu data o stanicích.
+ *
+ * @return std::vector<Station> Vektor naparsovaných stanic. V případě selhání vrací prázdný vektor.
+ */
 std::vector<Station> loadStationsParallel(const std::string &path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) return {};
@@ -324,12 +291,11 @@ std::vector<Station> loadStationsParallel(const std::string &path) {
     std::string buffer(size, '\0');
     if (!file.read(buffer.data(), size)) return {};
 
-    // Přeskočení hlavičky
     const size_t headerEnd = buffer.find('\n');
     if (headerEnd == std::string::npos) return {};
     size_t startPos = headerEnd + 1;
 
-    // Rozdělení na chunky pro vlákna
+    // Výpočet a segmentace hranic pro multi-threading
     const size_t nThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
     std::vector<std::pair<const char *, const char *> > chunks;
     const size_t approxChunk = (size - startPos) / nThreads;
@@ -337,7 +303,7 @@ std::vector<Station> loadStationsParallel(const std::string &path) {
     for (size_t i = 0; i < nThreads; ++i) {
         size_t endPos = (i == nThreads - 1) ? size : startPos + approxChunk;
 
-        // Zarovnání na konec řádku
+        // Zarovnání pozice konce na konec existujícího řádku (prevence splitů)
         if (endPos < size) {
             while (endPos < size && buffer[endPos] != '\n') endPos++;
             if (endPos < size) endPos++;
@@ -349,7 +315,6 @@ std::vector<Station> loadStationsParallel(const std::string &path) {
         startPos = endPos;
     }
 
-    // Paralelní parsování
     std::vector<std::vector<Station> > localResults(chunks.size());
     std::vector<std::thread> threads;
 
@@ -359,7 +324,6 @@ std::vector<Station> loadStationsParallel(const std::string &path) {
             const char *end = chunks[i].second;
             auto &localVec = localResults[i];
 
-            // Odhad počtu stanic v chunku (předpoklad cca 50 znaků na stanici)
             localVec.reserve((end - p) / 50);
 
             while (p < end) {
@@ -370,21 +334,17 @@ std::vector<Station> loadStationsParallel(const std::string &path) {
                     Station s{};
                     const char *curr = p;
 
-                    // ID
                     auto [ptr1, ec1] = std::from_chars(curr, lineEnd, s.id);
                     curr = ptr1;
                     if (curr < lineEnd && *curr == ';') curr++;
 
-                    // Name (přeskočíme)
                     while (curr < lineEnd && *curr != ';') curr++;
                     if (curr < lineEnd && *curr == ';') curr++;
 
-                    // Lat
                     auto [ptr2, ec2] = std::from_chars(curr, lineEnd, s.lat);
                     curr = ptr2;
                     if (curr < lineEnd && *curr == ';') curr++;
 
-                    // Lon
                     std::from_chars(curr, lineEnd, s.lon);
 
                     localVec.push_back(s);
@@ -396,6 +356,7 @@ std::vector<Station> loadStationsParallel(const std::string &path) {
 
     for (auto &t: threads) t.join();
 
+    // Spojení vláken a redukce výsledků (move semantics pro efektivitu)
     size_t totalStations = 0;
     for (const auto &res: localResults) totalStations += res.size();
 
