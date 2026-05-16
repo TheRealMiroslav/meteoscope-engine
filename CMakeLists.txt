@@ -12,29 +12,29 @@ project ("upp_sp1")
 
 add_executable(upp_sp1
         main.cpp
-        core/AppRunner.h
-        core/AppRunner.cpp
-        io/CsvParser.h
-        io/CsvParser.cpp
-        io/CsvWriter.h
-        io/CsvWriter.cpp
-        processing/Aggregator.h
-        processing/Aggregator.cpp
-        processing/AnomalyDetector.h
-        processing/AnomalyDetector.cpp
-        processing/Filter.h
-        processing/Filter.cpp
-        output/ColorMapper.h
-        output/ColorMapper.cpp
-        output/CoordMapper.h
-        output/CoordMapper.cpp
-        output/SvgWriter.h
-        output/SvgWriter.cpp
-        data/Station.h
-        data/Measurement.h
-        data/Anomaly.h
-        utils/Config.h
-        utils/Timer.h
+        src/core/AppRunner.h
+        src/core/AppRunner.cpp
+        src/io/CsvParser.h
+        src/io/CsvParser.cpp
+        src/io/CsvWriter.h
+        src/io/CsvWriter.cpp
+        src/processing/Aggregator.h
+        src/processing/Aggregator.cpp
+        src/processing/AnomalyDetector.h
+        src/processing/AnomalyDetector.cpp
+        src/processing/Filter.h
+        src/processing/Filter.cpp
+        src/output/ColorMapper.h
+        src/output/ColorMapper.cpp
+        src/output/CoordMapper.h
+        src/output/CoordMapper.cpp
+        src/output/SvgWriter.h
+        src/output/SvgWriter.cpp
+        src/data/Station.h
+        src/data/Measurement.h
+        src/data/Anomaly.h
+        src/utils/Config.h
+        src/utils/Timer.h
 )
 
-target_include_directories(upp_sp1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(upp_sp1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

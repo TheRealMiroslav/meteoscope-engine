@@ -158,11 +158,14 @@ void writeSvgMapsParallel(
     };
 
     // Načtení šablony jen jednou pro všechny měsíce
-    std::ifstream t(mapSvgPath);
-    if (!t.is_open()) return;
+    std::ifstream fileStream(mapSvgPath);
+    // Načtení podkladového SVG do paměti jako jeden textový řetězec
+    if (!fileStream.is_open()) {
+        throw std::runtime_error("Chyba: Nepodarilo se nacist podkladovou mapu: " + mapSvgPath);
+    }
 
     std::stringstream buffer;
-    buffer << t.rdbuf();
+    buffer << fileStream.rdbuf();
     std::string templateStr = buffer.str();
 
     // Rozdělení šablony na hlavičku a patičku před samotným generováním,
