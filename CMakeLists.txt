@@ -11,7 +11,7 @@ endif()
 project ("upp_sp1")
 
 add_executable(upp_sp1
-        main.cpp
+        src/main.cpp
         src/core/AppRunner.h
         src/core/AppRunner.cpp
         src/io/CsvParser.h
