@@ -33,13 +33,13 @@ namespace Config {
 
     // --- Cesty k souborům a adresářům ---
     // Relativní cesta k podkladové slepé mapě, na kterou se kreslí data
-    constexpr auto MAP_SVG_PATH = "czmap.svg";
+    constexpr const char *MAP_SVG_PATH = "czmap.svg";
+    constexpr const char *OUTPUT_DIR_BASE = "maps/";
 
-    constexpr std::string OUTPUT_DIR = "../maps/";
+    inline const std::string OUTPUT_DIR = OUTPUT_DIR_BASE;
+    inline const std::string OUTPUT_SERIAL_MAPS_DIR = OUTPUT_DIR + "serial_maps/";
+    inline const std::string OUTPUT_PARALLEL_MAPS_DIR = OUTPUT_DIR + "parallel_maps/";
 
-    const std::string OUTPUT_SERIAL_MAPS_DIR = OUTPUT_DIR + "serial_maps/";
-    const std::string OUTPUT_PARALLEL_MAPS_DIR = OUTPUT_DIR + "parallel_maps/";
-
-    const std::string OUTPUT_SERIAL_FLUCTUATION_DIR = OUTPUT_DIR + "serial_vykyvy.csv";
-    const std::string OUTPUT_PARALLEL_FLUCTUATION_DIR = OUTPUT_DIR + "parallel_vykyvy.csv";
+    inline const std::string OUTPUT_SERIAL_FLUCTUATION_DIR = OUTPUT_DIR + "serial_vykyvy.csv";
+    inline const std::string OUTPUT_PARALLEL_FLUCTUATION_DIR = OUTPUT_DIR + "parallel_vykyvy.csv";
 }

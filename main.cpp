@@ -75,6 +75,18 @@ int main(const int argc, char const *argv[]) {
     }
     loadTimer.stop();
 
+    // --- KONTROLA NAČTENÝCH DAT ---
+    // Pokud se nepodařilo načíst žádná data, vypíšeme chybu a ukončíme program
+    if (stations.empty()) {
+        std::cerr << "Chyba: Nepodarilo se nacist zadne stanice ze souboru '" << stationPath << "'. Soubor neexistuje nebo je prazdny.\n";
+        return -1;
+    }
+
+    if (measurements.empty()) {
+        std::cerr << "Chyba: Nepodarilo se nacist zadna mereni ze souboru '" << measurementsPath << "'. Soubor neexistuje nebo je prazdny.\n";
+        return -1;
+    }
+
     // 2. Fáze: Zpracování (výpočty, detekce anomálií, zápis souborů)
     Timer processTimer;
     if (mode == "--serial") {
