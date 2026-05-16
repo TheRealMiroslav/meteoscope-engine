@@ -23,7 +23,6 @@
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
 - [Usage](#-usage)
-- [Roadmap](#-roadmap)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -100,9 +99,6 @@ Ensure you have the following installed before proceeding:
 
 The executable requires exactly three arguments: the stations CSV, the measurements CSV, and the execution mode flag.
 
-<details>
-<summary><strong>Click to view usage examples</strong></summary>
-
 ### Serial Execution (Single Thread)
 Ideal for smaller datasets or debugging.
 ```bash
@@ -132,10 +128,6 @@ Upon successful completion, the program will output telemetry data to the consol
 ================================================
 ```
 Generated SVG maps and CSV reports will be saved to the configured output directories (e.g., `maps/serial_maps/` or `maps/parallel_maps/`).
-
-</details>
-
----
 
 ## 🤝 Contributing
 

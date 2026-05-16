@@ -23,7 +23,6 @@
   - [Prerekvizity](#prerekvizity)
   - [Instalace](#instalace)
 - [Použití](#-použití)
-- [Plány do budoucna (Roadmap)](#-plány-do-budoucna-roadmap)
 - [Příspěvky](#-příspěvky)
 - [Licence](#-licence)
 
@@ -100,9 +99,6 @@ Před pokračováním se ujistěte, že máte nainstalováno následující:
 
 Spustitelný soubor vyžaduje přesně tři argumenty: CSV se stanicemi, CSV s měřeními a přepínač režimu zpracování.
 
-<details>
-<summary><strong>Klikněte pro zobrazení příkladů použití</strong></summary>
-
 ### Sériové zpracování (Jedno vlákno)
 Ideální pro menší datové sady nebo ladění (debugging).
 ```bash
@@ -132,8 +128,6 @@ Po úspěšném dokončení program vypíše telemetrická data do konzole:
 ================================================
 ```
 Vygenerované SVG mapy a CSV reporty budou uloženy do nakonfigurovaných výstupních adresářů (např. `maps/serial_maps/` nebo `maps/parallel_maps/`).
-
-</details>
 
 ---
 
