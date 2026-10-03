@@ -62,7 +62,8 @@ represents a code of conduct violation, and this Code of Conduct reinforces enco
 avoid conflicts and minimize harm.
 
 When an incident does occur, it is important to report it promptly. To report a possible violation, please contact the
-maintainers at **miros.vanis@gmail.com**.
+repository maintainer directly via GitHub (**[@TheRealMiroslav](https://github.com/TheRealMiroslav)**) or submit a
+confidential advisory under the repository's **Security** tab.
 
 Community Moderators take reports of violations seriously and will make every effort to respond in a timely manner. They
 will investigate all reports of code of conduct violations, reviewing messages, logs, and recordings, or interviewing

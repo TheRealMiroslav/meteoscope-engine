@@ -21,24 +21,30 @@ Only the latest release branch and current `main` branch receive security patche
 If you discover a security vulnerability, please **DO NOT** open a public issue. Publicly disclosing a vulnerability can
 endanger the community and any systems running this software.
 
-Instead, please report security issues confidentially by following these steps:
+Instead, please report security issues confidentially using one of the following methods:
 
-1. **Email Disclosure:**
-   Send an encrypted or direct email detailing the vulnerability to **miros.vanis@gmail.com** with the subject line:
-   `[SECURITY] Vulnerability Report - MeteoScope Engine`.
+1. **GitHub Security Advisory (Recommended):**
+   Navigate to the repository's **Security** tab and select **Advisories** to submit a private vulnerability report. *(
+   Note: This requires Private Vulnerability Reporting enabled in repository settings).*
 
-2. **Include Required Information:**
-   To help us triage and resolve the issue quickly, please provide:
-    - A clear description of the vulnerability and its potential impact.
-    - Exact steps or minimal reproducible proof-of-concept (PoC) code/dataset triggering the vulnerability (e.g.,
-      malformed CSV payload causing memory corruption or buffer overrun).
-    - Affected environment (OS, compiler, CPU architecture, commit hash or release tag).
-    - Any suggested mitigations or patches, if known.
+2. **Direct Contact via GitHub:**
+   Reach out directly to the maintainer via GitHub profile (**[@TheRealMiroslav](https://github.com/TheRealMiroslav)**).
 
-3. **Response Timeline:**
-    - **Acknowledgment:** Within **48 hours** of receipt.
-    - **Assessment & Triage:** Within **5 business days**, including an estimated fix timeline.
-    - **Coordinated Disclosure:** We will work with you to test the fix and agree upon a coordinated disclosure date and
-      CVE assignment if applicable.
+### Information to Include in Your Report
+
+To help us triage and resolve the issue quickly, please provide:
+
+- A clear description of the vulnerability and its potential impact.
+- Exact steps or minimal reproducible proof-of-concept (PoC) code/dataset triggering the vulnerability (e.g., malformed
+  CSV payload causing memory corruption or buffer overrun).
+- Affected environment (OS, compiler, CPU architecture, commit hash or release tag).
+- Any suggested mitigations or patches, if known.
+
+### Response Timeline
+
+- **Acknowledgment:** Within **48 hours** of receipt.
+- **Assessment & Triage:** Within **5 business days**, including an estimated fix timeline.
+- **Coordinated Disclosure:** We will work with you to test the fix and agree upon a coordinated disclosure date and CVE
+  assignment if applicable.
 
 Thank you for helping keep MeteoScope Engine secure!
