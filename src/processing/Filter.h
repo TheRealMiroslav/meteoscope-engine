@@ -7,20 +7,20 @@
 
 /**
  * @file Filter.h
- * @brief Deklarace funkcí pro filtraci meteorologických stanic na základě kvality a objemu dat.
+ * @brief Functions for data hygiene and filtering meteorological stations by quality metrics.
  */
 
 /**
- * @brief Sériová filtrace stanic na základě minimálních požadavků na data.
+ * @brief Sequentially filters stations based on minimum observation threshold criteria.
  *
- * Funkce vyřadí stanice, které nemají dostatečnou historii měření (nepřerušená řada let)
- * nebo nemají dostatečnou hustotu měření v zaznamenaných letech.
+ * Discards stations lacking adequate observation continuity (unbroken series of years)
+ * or density (minimum average readings per active year).
  *
- * @param groupedMeasurements Hierarchická struktura dat: ID stanice -> Rok -> Seznam měření.
- * @param minYears Minimální počet po sobě jdoucích let měření nutný pro zachování stanice.
- * @param minPerYear Minimální průměrný počet měření na jeden zaznamenaný rok.
+ * @param groupedMeasurements Hierarchical structure: station ID -> year -> measurements list.
+ * @param minYears Minimum consecutive observation years required to retain station.
+ * @param minPerYear Minimum average observation count per recorded year.
  *
- * @return std::vector<int> Vektor ID stanic, které splnily kritéria filtrace.
+ * @return std::vector<int> Vector of station IDs that met the quality criteria.
  */
 std::vector<int> filterStationsSerial(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
@@ -28,16 +28,16 @@ std::vector<int> filterStationsSerial(
     int minPerYear);
 
 /**
- * @brief Paralelní filtrace stanic na základě minimálních požadavků na data.
+ * @brief Concurrently filters stations based on minimum observation threshold criteria.
  *
- * Vícevláknová alternativa k `filterStationsSerial`. Využívá `std::execution::par`
- * a lock-free strategii zápisu výsledků pomocí pomocného boolean (int) vektoru.
+ * Multithreaded alternative to filterStationsSerial leveraging std::execution::par
+ * and lock-free thread-indexed slot assignment.
  *
- * @param groupedMeasurements Hierarchická struktura dat: ID stanice -> Rok -> Seznam měření.
- * @param minYears Minimální počet po sobě jdoucích let měření nutný pro zachování stanice.
- * @param minPerYear Minimální průměrný počet měření na jeden zaznamenaný rok.
+ * @param groupedMeasurements Hierarchical structure: station ID -> year -> measurements list.
+ * @param minYears Minimum consecutive observation years required to retain station.
+ * @param minPerYear Minimum average observation count per recorded year.
  *
- * @return std::vector<int> Vektor ID stanic, které splnily kritéria filtrace.
+ * @return std::vector<int> Vector of station IDs that met the quality criteria.
  */
 std::vector<int> filterStationsParallel(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,

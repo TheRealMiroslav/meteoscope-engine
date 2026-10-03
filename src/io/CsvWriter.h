@@ -5,24 +5,29 @@
 #include "../data/Anomaly.h"
 
 /**
- * @brief Sériový zápis nalezených anomálií do CSV formátu.
+ * @file CsvWriter.h
+ * @brief Utilities for serializing anomaly detection results into CSV files.
+ */
+
+/**
+ * @brief Serial export of detected meteorological anomalies to CSV format.
  *
- * @param anomalies Vektor detekovaných anomálií k exportu.
- * @param filePath Cesta, kam se má výsledný soubor uložit.
+ * @param anomalies Vector of detected anomalies to export.
+ * @param filePath Output file destination path.
  *
- * @throws std::runtime_error Pokud nelze cílový soubor otevřít pro zápis.
+ * @throws std::runtime_error If the target file cannot be opened for writing.
  */
 void writeSerialAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::string &filePath);
 
 /**
- * @brief Paralelizovaný zápis nalezených anomálií do CSV formátu.
+ * @brief Parallelized export of detected meteorological anomalies to CSV format.
  *
- * Odděluje na CPU náročné formátování textu (provádí se vícevláknově)
- * od samotného diskového I/O zápisu (provádí se sériově pro zamezení race conditions na disku).
+ * Decouples CPU-bound text formatting (multithreaded via std::execution::par)
+ * from sequential disk I/O to avoid filesystem race conditions.
  *
- * @param anomalies Vektor detekovaných anomálií k exportu.
- * @param filePath Cesta, kam se má výsledný soubor uložit.
+ * @param anomalies Vector of detected anomalies to export.
+ * @param filePath Output file destination path.
  *
- * @throws std::runtime_error Pokud nelze cílový soubor otevřít pro zápis.
+ * @throws std::runtime_error If the target file cannot be opened for writing.
  */
 void writeParallelAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::string &filePath);

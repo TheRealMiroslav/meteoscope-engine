@@ -7,39 +7,37 @@
 
 /**
  * @file Aggregator.h
- * @brief Modul pro agregaci naměřených meteorologických dat.
+ * @brief Aggregates raw time-series meteorological readings into monthly statistical summaries.
  *
- * Poskytuje funkce pro výpočet průměrných měsíčních teplot z denních měření
- * pro specifikované stanice. K dispozici je sekvenční i paralelní varianta.
+ * Computes mean monthly temperatures from discrete daily observations for validated stations.
+ * Provides serial and parallel implementations.
  */
 
 /**
- * @brief Sekvenčně vypočítá měsíční průměry teplot pro zadané stanice.
+ * @brief Sequentially computes monthly temperature averages for specified stations.
  *
- * @param groupedMeasurements Naměřená data seskupená podle stanice, roku a měsíce.
- * @param passedStationIds Seznam ID stanic, pro které se mají průměry počítat.
+ * @param groupedMeasurements Raw observations grouped by station, year, and month.
+ * @param passedStationIds List of validated station IDs to process.
  *
- * @return std::map<int, std::map<int, std::map<int, double>>> Vnořená mapa obsahující
- * výsledné průměry ve formátu [ID stanice -> [Rok -> [Měsíc -> Průměrná teplota]]].
+ * @return std::map<int, std::map<int, std::map<int, double>>> Nested map of
+ * calculated averages: [station ID -> [year -> [month -> mean temperature]]].
  */
 std::map<int, std::map<int, std::map<int, double> > > computeMonthlyAverages(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
     const std::vector<int> &passedStationIds);
 
 /**
- * @brief Paralelně vypočítá měsíční průměry teplot pro zadané stanice.
+ * @brief Concurrently computes monthly temperature averages for specified stations.
  *
- * Efektivnější varianta pro velká množství dat. Výpočet je paralelizován na úrovni
- * jednotlivých stanic, přičemž každé vlákno zpracovává všechny roky a měsíce dané stanice.
+ * High-performance multithreaded calculation distributed at station level via std::execution::par.
+ * Each worker operates on station-local map accumulators (lock-free).
  *
- * @param groupedMeasurements Naměřená data seskupená podle stanice, roku a měsíce.
- * @param passedStationIds Seznam ID stanic, pro které se mají průměry počítat.
+ * @param groupedMeasurements Raw observations grouped by station, year, and month.
+ * @param passedStationIds List of validated station IDs to process.
  *
- * @return std::map<int, std::map<int, std::map<int, double>>> Vnořená mapa obsahující
- * výsledné průměry ve formátu [ID stanice -> [Rok -> [Měsíc -> Průměrná teplota]]].
+ * @return std::map<int, std::map<int, std::map<int, double>>> Nested map of
+ * calculated averages: [station ID -> [year -> [month -> mean temperature]]].
  */
 std::map<int, std::map<int, std::map<int, double> > > computeMonthlyAveragesParallel(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
     const std::vector<int> &passedStationIds);
-
-

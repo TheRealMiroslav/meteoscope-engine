@@ -6,25 +6,30 @@
 #include "../data/Measurement.h"
 
 /**
- * @brief Sériová verze hlavního procesu pro zpracování meteorologických dat.
+ * @file AppRunner.h
+ * @brief Orchestrates end-to-end meteorological data processing pipelines.
+ */
+
+/**
+ * @brief Serial execution pipeline for meteorological data processing.
  *
- * Funkce postupně seskupí data, vyfiltruje validní stanice (podle počtu let a záznamů),
- * vypočítá měsíční průměry, najde globální extrémy, detekuje anomálie a následně
- * vygeneruje CSV reporty a SVG mapy. Vše probíhá sekvenčně v jednom vlákně.
+ * Sequentially groups raw data, filters stations by historical continuity and density,
+ * computes monthly averages, discovers global extremes, detects anomalies,
+ * and writes CSV reports and SVG vector maps in a single thread.
  *
- * @param stations Vektor všech dostupných meteorologických stanic.
- * @param measurements Vektor všech naměřených hodnot ke zpracování.
+ * @param stations Vector of all ingested meteorological stations.
+ * @param measurements Vector of all ingested time-series measurements.
  */
 void runSerial(const std::vector<Station> &stations, const std::vector<Measurement> &measurements);
 
 /**
- * @brief Paralelní verze hlavního procesu pro zpracování meteorologických dat.
+ * @brief Parallel execution pipeline for high-throughput meteorological data processing.
  *
- * Funkce provádí stejné kroky jako `runSerial`, ale využívá vícevláknové zpracování
- * (std::thread, std::execution::par) k optimalizaci výpočtů a agregace dat.
- * Obsahuje map-reduce logiku pro bezpečné rozdělení a sloučení dat mezi vlákny.
+ * Executes the identical computational stages as runSerial, but leverages multi-threading
+ * (std::thread, std::execution::par) and lock-free thread-local Map-Reduce reduction patterns
+ * to scale across all available CPU cores.
  *
- * @param stations Vektor všech dostupných meteorologických stanic.
- * @param measurements Vektor všech naměřených hodnot ke zpracování.
+ * @param stations Vector of all ingested meteorological stations.
+ * @param measurements Vector of all ingested time-series measurements.
  */
 void runParallel(const std::vector<Station> &stations, const std::vector<Measurement> &measurements);

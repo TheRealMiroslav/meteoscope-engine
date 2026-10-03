@@ -1,16 +1,17 @@
 /**
  * @file main.cpp
  *
- * @brief Hlavní vstupní bod aplikace pro zpracování meteorologických dat.
+ * @brief Main entry point for the MeteoScope meteorological analysis engine.
  *
- * Zajišťuje zpracování parametrů příkazové řádky, inicializaci, načtení dat
- * (sériově či paralelně) a spuštění příslušné výpočetní logiky pro vyhodnocení
- * a generování výstupů (CSV, SVG).
+ * Handles CLI argument validation, console UTF-8 initialization,
+ * serial or parallel dataset ingestion, anomaly detection, statistical aggregation,
+ * and vector (SVG) and tabular (CSV) output generation.
  */
 
 #include <iostream>
 #include <string>
 #include <vector>
+#include <iomanip>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -22,27 +23,26 @@
 #include "utils/Timer.h"
 
 /**
- * @brief Hlavní funkce programu.
+ * @brief Application entry point.
  *
- * Očekává přesně 3 parametry příkazové řádky:
- * 1. Cestu k CSV souboru se stanicemi
- * 2. Cestu k CSV souboru s měřeními
- * 3. Přepínač režimu zpracování (--serial nebo --parallel)
+ * Expects exactly 3 command-line arguments:
+ * 1. Path to stations CSV file
+ * 2. Path to measurements CSV file
+ * 3. Processing mode flag (--serial or --parallel)
  *
- * @param argc Počet argumentů zadaných z příkazové řádky.
- * @param argv Pole textových řetězců reprezentujících argumenty.
- * @return Nula při úspěšném běhu, -1 v případě chyby vstupních parametrů.
+ * @param argc Number of command-line arguments.
+ * @param argv Array of argument strings.
+ * @return 0 on success, -1 on argument or runtime error.
  */
 int main(const int argc, char const *argv[]) {
 #ifdef _WIN32
-    // Nastavení kódování konzole na UTF-8 pro správné zobrazení (i případné diakritiky)
+    // Set console code page to UTF-8 for international characters
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
 #endif
 
-    // Kontrola počtu argumentů
     if (argc != 4) {
-        std::cerr << "Pouziti: " << argv[0] << " <stanice.csv> <mereni.csv> <--serial|--parallel>\n";
+        std::cerr << "Usage: " << argv[0] << " <stations.csv> <measurements.csv> <--serial|--parallel>\n";
         return -1;
     }
 
@@ -50,21 +50,18 @@ int main(const int argc, char const *argv[]) {
     const std::string measurementsPath = argv[2];
     const std::string mode = argv[3];
 
-    // Validace zvoleného režimu zpracování
     if (mode != "--serial" && mode != "--parallel") {
-        std::cerr << "Chyba: Neplatny prepinac '" << mode << "'. Pouzijte --serial nebo --parallel.\n";
+        std::cerr << "Error: Invalid mode flag '" << mode << "'. Use --serial or --parallel.\n";
         return -1;
     }
 
-    // Příprava datových struktur
     std::vector<Station> stations;
     std::vector<Measurement> measurements;
 
-    // --- ZAČÁTEK MĚŘENÉHO BLOKU ---
-    // Timer se v konstruktoru automaticky spustí
+    // --- TIMED EXECUTION BLOCK ---
     Timer totalTimer;
 
-    // 1. Fáze: Načítání
+    // Phase 1: Ingestion
     Timer loadTimer;
     if (mode == "--serial") {
         stations = loadStationsSerial(stationPath);
@@ -75,19 +72,17 @@ int main(const int argc, char const *argv[]) {
     }
     loadTimer.stop();
 
-    // --- KONTROLA NAČTENÝCH DAT ---
-    // Pokud se nepodařilo načíst žádná data, vypíšeme chybu a ukončíme program
     if (stations.empty()) {
-        std::cerr << "Chyba: Nepodarilo se nacist zadne stanice ze souboru '" << stationPath << "'. Soubor neexistuje nebo je prazdny.\n";
+        std::cerr << "Error: Failed to load stations from '" << stationPath << "'. File does not exist or is empty.\n";
         return -1;
     }
 
     if (measurements.empty()) {
-        std::cerr << "Chyba: Nepodarilo se nacist zadna mereni ze souboru '" << measurementsPath << "'. Soubor neexistuje nebo je prazdny.\n";
+        std::cerr << "Error: Failed to load measurements from '" << measurementsPath << "'. File does not exist or is empty.\n";
         return -1;
     }
 
-    // 2. Fáze: Zpracování (výpočty, detekce anomálií, zápis souborů)
+    // Phase 2: Processing (filtering, monthly aggregation, anomaly detection, SVG generation)
     Timer processTimer;
     if (mode == "--serial") {
         runSerial(stations, measurements);
@@ -97,24 +92,22 @@ int main(const int argc, char const *argv[]) {
     processTimer.stop();
 
     totalTimer.stop();
-    // --- KONEC MĚŘENÉHO BLOKU ---
+    // --- END TIMED BLOCK ---
 
-    // Veškeré výpisy probíhají až zde, kdy už jsou stopky zastaveny
     std::cout << "================================================\n";
-    std::cout << "       METEOROLOGICKA ANALYZA DOKONCENA         \n";
+    std::cout << "       METEOROLOGICAL ANALYSIS COMPLETE         \n";
     std::cout << "================================================\n";
-    std::cout << " Rezim:            " << (mode == "--parallel" ? "PARALELNI" : "SERIOVY") << "\n";
-    std::cout << " Pocet stanic:     " << stations.size() << "\n";
-    std::cout << " Pocet mereni:     " << measurements.size() << "\n";
+    std::cout << " Mode:              " << (mode == "--parallel" ? "PARALLEL" : "SERIAL") << "\n";
+    std::cout << " Station Count:     " << stations.size() << "\n";
+    std::cout << " Measurement Count: " << measurements.size() << "\n";
     std::cout << "------------------------------------------------\n";
 
-    // Nastavení formátu desetinných čísel
     std::cout << std::fixed << std::setprecision(3);
 
-    std::cout << " Cas nacitani:     " << loadTimer.elapsedSeconds() << " s\n";
-    std::cout << " Cas zpracovani:   " << processTimer.elapsedSeconds() << " s\n";
+    std::cout << " Load Time:         " << loadTimer.elapsedSeconds() << " s\n";
+    std::cout << " Processing Time:   " << processTimer.elapsedSeconds() << " s\n";
     std::cout << "------------------------------------------------\n";
-    std::cout << " CELKOVY CAS:      " << totalTimer.elapsedSeconds() << " s\n";
+    std::cout << " TOTAL TIME:        " << totalTimer.elapsedSeconds() << " s\n";
     std::cout << "================================================\n";
 
     return 0;

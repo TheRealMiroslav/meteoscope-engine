@@ -1,14 +1,16 @@
 #pragma once
 
 /**
- * @brief Reprezentuje detekovanou anomálii v naměřených datech.
+ * @file Anomaly.h
  *
- * Uchovává informace o tom, na jaké stanici, v jakém čase k výkyvu došlo,
- * a jak výrazná tato odchylka byla.
+ * @brief Represents a detected meteorological anomaly.
+ *
+ * Stores metadata on where and when a significant inter-annual temperature swing occurred,
+ * along with the magnitude of deviation.
  */
 struct Anomaly {
-    int station_id; ///< Unikátní identifikátor meteorologické stanice, kde anomálie nastala.
-    int month;      ///< Měsíc výskytu anomálie (1-12).
-    int year;       ///< Rok výskytu anomálie.
-    double diff;    ///< Velikost odchylky (např. teplotní rozdíl oproti očekávanému průměru).
+    int station_id; ///< Identifier of the station where the anomaly occurred.
+    int month;      ///< Month of the anomaly event (1-12).
+    int year;       ///< Year of the anomaly event.
+    double diff;    ///< Magnitude of temperature deviation relative to previous year.
 };

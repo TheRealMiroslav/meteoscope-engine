@@ -2,23 +2,23 @@
 #include "../utils/Config.h"
 
 /**
- * @brief Převede zeměpisnou šířku a délku na souřadnice X a Y pro vykreslení v SVG.
+ * @brief Projects latitude and longitude into X and Y pixel coordinates for SVG plotting.
  *
- * Využívá konstanty definované ve třídě Config pro určení rozměrů plátna a okrajů bounding boxu.
+ * Uses calibrated boundaries and dimensions defined in Config.
  *
- * @param lat Zeměpisná šířka (Latitude).
- * @param lon Zeměpisná délka (Longitude).
+ * @param lat Latitude in decimal degrees.
+ * @param lon Longitude in decimal degrees.
  *
- * @return std::pair<int, int> Dvojice X a Y souřadnic v pixelech.
+ * @return std::pair<int, int> Pair of X and Y coordinates in pixels.
  */
 std::pair<int, int> GetCoordinates(const double lat, const double lon) {
     std::pair<int, int> coords;
 
-    // Lineární transformace zeměpisné délky (Longitude) na osu X zleva doprava.
+    // Linear projection of longitude onto X axis (left to right)
     const double x = (((lon - Config::LON_MIN) * Config::SVG_WIDTH) / (Config::LON_MAX - Config::LON_MIN));
 
-    // Lineární transformace zeměpisné šířky (Latitude) na osu Y.
-    // V SVG roste souřadnice Y směrem dolů, proto je výpočet invertován vzhledem k rovníku.
+    // Linear projection of latitude onto Y axis
+    // In SVG space, Y increases downwards, hence inversion relative to equator
     const double y = (((Config::LAT_MAX - lat) * Config::SVG_HEIGHT) / (Config::LAT_MAX - Config::LAT_MIN));
 
     coords.first = static_cast<int>(x);

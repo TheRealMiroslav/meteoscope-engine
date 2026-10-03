@@ -6,29 +6,28 @@
 
 /**
  * @file AnomalyDetector.h
- * @brief Modul pro detekci teplotních anomálií a výkyvů.
+ * @brief Analyzes historical temperature averages to detect acute inter-annual anomalies.
  *
- * Slouží k analýze historických teplotních průměrů a identifikaci
- * signifikantních meziročních výkyvů (např. extrémní skoky průměrné
- * teploty v rámci shodného měsíce u dvou po sobě jdoucích let).
+ * Compares year-over-year temperature swings for identical calendar months
+ * against dynamic thresholds derived from historical temperature ranges.
  */
 
 /**
- * @brief Sekvenčně detekuje teplotní anomálie pro všechny stanice.
+ * @brief Sequentially detects temperature anomalies across all stations.
  *
- * @param averages Vnořená mapa měsíčních průměrů [ID stanice -> [Rok -> [Měsíc -> Teplota]]].
+ * @param averages Nested map of monthly averages [station ID -> [year -> [month -> mean temperature]]].
  *
- * @return std::vector<Anomaly> Seznam detekovaných anomálií seřazený chronologicky a dle stanic.
+ * @return std::vector<Anomaly> List of detected anomalies sorted chronologically and by station.
  */
 std::vector<Anomaly> detectAnomalies(const std::map<int, std::map<int, std::map<int, double> > > &averages);
 
 /**
- * @brief Paralelně detekuje teplotní anomálie pro všechny stanice.
+ * @brief Concurrently detects temperature anomalies across all stations.
  *
- * Využívá vícevláknové zpracování k urychlení detekce na velkých datasetech.
+ * Accelerates anomaly detection on large datasets using std::execution::par.
  *
- * @param averages Vnořená mapa měsíčních průměrů [ID stanice -> [Rok -> [Měsíc -> Teplota]]].
+ * @param averages Nested map of monthly averages [station ID -> [year -> [month -> mean temperature]]].
  *
- * @return std::vector<Anomaly> Seznam detekovaných anomálií seřazený chronologicky a dle stanic.
+ * @return std::vector<Anomaly> List of detected anomalies sorted chronologically and by station.
  */
 std::vector<Anomaly> detectAnomaliesParallel(const std::map<int, std::map<int, std::map<int, double> > > &averages);

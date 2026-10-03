@@ -1,144 +1,144 @@
-Meteorologicka analyza - casy zpracovani podle velikosti datasetu
+Meteorological Analysis - Processing Benchmarks by Dataset Tier
 
 Small Dataset
 ------------------------------------------------
-       DETAILNI MERENI FAZI (SERIOVY BEH)
+       DETAILED PHASE MEASUREMENT (SERIAL RUN)
 ------------------------------------------------
- 1. Seskupeni dat:       0.12405 s
- 2. Filtrovani stanic:   0.00024 s
- 3. Vypocet prumeru:     0.02537 s
- 4. Hledani extremu:     0.00193 s
- 5. Detekce anomalii:    0.00878 s
- 6. Vykresleni SVG map:  0.02758 s
+ 1. Data Grouping:       0.12405 s
+ 2. Station Filtering:   0.00024 s
+ 3. Average Calculation: 0.02537 s
+ 4. Extremes Discovery:  0.00193 s
+ 5. Anomaly Detection:   0.00878 s
+ 6. SVG Map Rendering:   0.02758 s
 ------------------------------------------------
 ================================================
- METEOROLOGICKA ANALYZA DOKONCENA (SERIOVY BEH)
+ METEOROLOGICAL ANALYSIS COMPLETE (SERIAL RUN)
 ================================================
- Rezim:            SERIOVY
- Pocet stanic:     512
- Pocet mereni:     4701195
+ Mode:              SERIAL
+ Station count:     512
+ Measurement count: 4701195
 ------------------------------------------------
- Cas nacitani:     0.701 s
- Cas zpracovani:   0.207 s
+ Load time:         0.701 s
+ Processing time:   0.207 s
 ------------------------------------------------
- CELKOVY CAS:      0.909 s
+ TOTAL TIME:        0.909 s
 ================================================
 
 ------------------------------------------------
-      DETAILNI MERENI FAZI (PARALELNI BEH)
+      DETAILED PHASE MEASUREMENT (PARALLEL RUN)
 ------------------------------------------------
- 1. Seskupeni dat:       0.03568 s
- 2. Filtrovani stanic:   0.00014 s
- 3. Vypocet prumeru:     0.00433 s
- 4. Hledani extremu:     0.00039 s
- 5. Detekce anomalii:    0.00217 s
- 6. Vykresleni SVG map:  0.02048 s
+ 1. Data Grouping:       0.03568 s
+ 2. Station Filtering:   0.00014 s
+ 3. Average Calculation: 0.00433 s
+ 4. Extremes Discovery:  0.00039 s
+ 5. Anomaly Detection:   0.00217 s
+ 6. SVG Map Rendering:   0.02048 s
 ------------------------------------------------
 ================================================
-METEOROLOGICKA ANALYZA DOKONCENA (PARALELNI BEH)
+METEOROLOGICAL ANALYSIS COMPLETE (PARALLEL RUN)
 ================================================
- Rezim:            PARALELNI
- Pocet stanic:     512
- Pocet mereni:     4701195
+ Mode:              PARALLEL
+ Station count:     512
+ Measurement count: 4701195
 ------------------------------------------------
- Cas nacitani:     0.200 s
- Cas zpracovani:   0.091 s
+ Load time:         0.200 s
+ Processing time:   0.091 s
 ------------------------------------------------
- CELKOVY CAS:      0.291 s
+ TOTAL TIME:        0.291 s
 ================================================
 
 
 Medium Dataset
 ------------------------------------------------
-       DETAILNI MERENI FAZI (SERIOVY BEH)
+       DETAILED PHASE MEASUREMENT (SERIAL RUN)
 ------------------------------------------------
- 1. Seskupeni dat:       0.55279 s
- 2. Filtrovani stanic:   0.00115 s
- 3. Vypocet prumeru:     0.11770 s
- 4. Hledani extremu:     0.00824 s
- 5. Detekce anomalii:    0.03292 s
- 6. Vykresleni SVG map:  0.08861 s
+ 1. Data Grouping:       0.55279 s
+ 2. Station Filtering:   0.00115 s
+ 3. Average Calculation: 0.11770 s
+ 4. Extremes Discovery:  0.00824 s
+ 5. Anomaly Detection:   0.03292 s
+ 6. SVG Map Rendering:   0.08861 s
 ------------------------------------------------
 ================================================
- METEOROLOGICKA ANALYZA DOKONCENA (SERIOVY BEH)
+ METEOROLOGICAL ANALYSIS COMPLETE (SERIAL RUN)
 ================================================
- Rezim:            SERIOVY
- Pocet stanic:     2012
- Pocet mereni:     21078707
+ Mode:              SERIAL
+ Station count:     2012
+ Measurement count: 21078707
 ------------------------------------------------
- Cas nacitani:     3.137 s
- Cas zpracovani:   0.897 s
+ Load time:         3.137 s
+ Processing time:   0.897 s
 ------------------------------------------------
- CELKOVY CAS:      4.034 s
+ TOTAL TIME:        4.034 s
 ================================================
 
 ------------------------------------------------
-      DETAILNI MERENI FAZI (PARALELNI BEH)
+      DETAILED PHASE MEASUREMENT (PARALLEL RUN)
 ------------------------------------------------
- 1. Seskupeni dat:       0.13278 s
- 2. Filtrovani stanic:   0.00026 s
- 3. Vypocet prumeru:     0.01597 s
- 4. Hledani extremu:     0.00148 s
- 5. Detekce anomalii:    0.00549 s
- 6. Vykresleni SVG map:  0.07057 s
+ 1. Data Grouping:       0.13278 s
+ 2. Station Filtering:   0.00026 s
+ 3. Average Calculation: 0.01597 s
+ 4. Extremes Discovery:  0.00148 s
+ 5. Anomaly Detection:   0.00549 s
+ 6. SVG Map Rendering:   0.07057 s
 ------------------------------------------------
 ================================================
-METEOROLOGICKA ANALYZA DOKONCENA (PARALELNI BEH)
+METEOROLOGICAL ANALYSIS COMPLETE (PARALLEL RUN)
 ================================================
- Rezim:            PARALELNI
- Pocet stanic:     2012
- Pocet mereni:     21078707
+ Mode:              PARALLEL
+ Station count:     2012
+ Measurement count: 21078707
 ------------------------------------------------
- Cas nacitani:     0.874 s
- Cas zpracovani:   0.383 s
+ Load time:         0.874 s
+ Processing time:   0.383 s
 ------------------------------------------------
- CELKOVY CAS:      1.257 s
+ TOTAL TIME:        1.257 s
 ================================================
 
 
 Large Dataset
 ------------------------------------------------
-       DETAILNI MERENI FAZI (SERIOVY BEH)
+       DETAILED PHASE MEASUREMENT (SERIAL RUN)
 ------------------------------------------------
- 1. Seskupeni dat:       1.62340 s
- 2. Filtrovani stanic:   0.00350 s
- 3. Vypocet prumeru:     0.35753 s
- 4. Hledani extremu:     0.02494 s
- 5. Detekce anomalii:    0.09507 s
- 6. Vykresleni SVG map:  0.25336 s
+ 1. Data Grouping:       1.62340 s
+ 2. Station Filtering:   0.00350 s
+ 3. Average Calculation: 0.35753 s
+ 4. Extremes Discovery:  0.02494 s
+ 5. Anomaly Detection:   0.09507 s
+ 6. SVG Map Rendering:   0.25336 s
 ------------------------------------------------
 ================================================
- METEOROLOGICKA ANALYZA DOKONCENA (SERIOVY BEH)
+ METEOROLOGICAL ANALYSIS COMPLETE (SERIAL RUN)
 ================================================
- Rezim:            SERIOVY
- Pocet stanic:     5512
- Pocet mereni:     61623333
+ Mode:              SERIAL
+ Station count:     5512
+ Measurement count: 61623333
 ------------------------------------------------
- Cas nacitani:     9.340 s
- Cas zpracovani:   2.665 s
+ Load time:         9.340 s
+ Processing time:   2.665 s
 ------------------------------------------------
- CELKOVY CAS:      12.005 s
+ TOTAL TIME:        12.005 s
 ================================================
 
 ------------------------------------------------
-      DETAILNI MERENI FAZI (PARALELNI BEH)
+      DETAILED PHASE MEASUREMENT (PARALLEL RUN)
 ------------------------------------------------
- 1. Seskupeni dat:       0.37987 s
- 2. Filtrovani stanic:   0.00067 s
- 3. Vypocet prumeru:     0.04539 s
- 4. Hledani extremu:     0.00432 s
- 5. Detekce anomalii:    0.01405 s
- 6. Vykresleni SVG map:  0.21660 s
+ 1. Data Grouping:       0.37987 s
+ 2. Station Filtering:   0.00067 s
+ 3. Average Calculation: 0.04539 s
+ 4. Extremes Discovery:  0.00432 s
+ 5. Anomaly Detection:   0.01405 s
+ 6. SVG Map Rendering:   0.21660 s
 ------------------------------------------------
 ================================================
-METEOROLOGICKA ANALYZA DOKONCENA (PARALELNI BEH)
+METEOROLOGICAL ANALYSIS COMPLETE (PARALLEL RUN)
 ================================================
- Rezim:            PARALELNI
- Pocet stanic:     5512
- Pocet mereni:     61623333
+ Mode:              PARALLEL
+ Station count:     5512
+ Measurement count: 61623333
 ------------------------------------------------
- Cas nacitani:     2.574 s
- Cas zpracovani:   1.276 s
+ Load time:         2.574 s
+ Processing time:   1.276 s
 ------------------------------------------------
- CELKOVY CAS:      3.850 s
+ TOTAL TIME:        3.850 s
 ================================================

@@ -3,25 +3,25 @@
 /**
  * @file ColorMapper.h
  *
- * @brief Modul pro mapování číselných hodnot (teplot) na barevnou škálu.
+ * @brief Maps scalar metrics (temperatures) to continuous color gradients.
  */
 
 /**
- * @brief Struktura reprezentující barvu v RGB barevném prostoru.
+ * @brief Structure representing a color in RGB space.
  */
 struct Color {
     int r, g, b;
 };
 
 /**
- * @brief Vypočítá RGB barvu na základě hodnoty teploty vzhledem k celkovému minimu a maximu.
+ * @brief Computes RGB color interpolated across a thermal scale bounded by min and max temperatures.
  *
- * Barva přechází plynule z modré (nejchladnější) přes zelenou (střed) až po červenou (nejteplejší).
+ * Smoothly transitions from blue (coldest) through green (median) to red (warmest).
  *
- * @param temp Aktuální teplota, pro kterou chceme získat barvu.
- * @param minTemp Globální minimální teplota (odpovídá čisté modré).
- * @param maxTemp Globální maximální teplota (odpovídá čisté červené).
+ * @param temp Value to map.
+ * @param minTemp Global baseline minimum temperature (maps to blue).
+ * @param maxTemp Global baseline maximum temperature (maps to red).
  *
- * @return Color Struktura obsahující vypočítané složky RGB (0-255).
+ * @return Color Structure containing RGB color channels (0-255).
  */
 Color GetColor(double temp, double minTemp, double maxTemp);

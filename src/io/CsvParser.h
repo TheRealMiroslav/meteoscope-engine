@@ -8,47 +8,47 @@
 /**
  * @file CsvParser.h
  *
- * @brief Modul poskytující funkce pro vysoce výkonné parsování CSV souborů.
+ * @brief High-throughput zero-copy CSV parsing module.
  *
- * Modul obsahuje synchronní (sériové) i asynchronní (paralelní) varianty načítání
- * dat ze souborů za účelem dosažení maximální propustnosti I/O operací a CPU.
+ * Provides serial and parallel implementations for ingesting station metadata
+ * and large time-series measurement streams with optimal memory buffering and CPU utilization.
  */
 
 /**
- * @brief Načte seznam meteorologických stanic ze zadaného CSV souboru (sériově).
+ * @brief Ingests meteorological station records from a CSV file (sequentially).
  *
- * @param path Cesta k CSV souboru obsahujícímu data o stanicích.
+ * @param path Filesystem path to the stations CSV.
  *
- * @return std::vector<Station> Vektor naparsovaných stanic. V případě selhání vrací prázdný vektor.
+ * @return std::vector<Station> Vector of parsed stations. Returns empty vector on failure.
  */
 std::vector<Station> loadStationsSerial(const std::string &path);
 
 /**
- * @brief Načte naměřené hodnoty ze zadaného CSV souboru (sériově).
+ * @brief Ingests time-series measurements from a CSV file (sequentially).
  *
- * @param path Cesta k CSV souboru obsahujícímu měření.
+ * @param path Filesystem path to the measurements CSV.
  *
- * @return std::vector<Measurement> Vektor naparsovaných měření. V případě selhání vrací prázdný vektor.
+ * @return std::vector<Measurement> Vector of parsed measurements. Returns empty vector on failure.
  */
 std::vector<Measurement> loadMeasurementSerial(const std::string &path);
 
 /**
- * @brief Načte naměřené hodnoty ze zadaného CSV souboru s využitím více vláken.
+ * @brief Concurrently ingests time-series measurements from a CSV file across worker threads.
  *
- * Funkce rozdělí soubor na logické bloky a zpracuje je paralelně pomocí dostupných
- * hardwarových vláken, což výrazně zrychluje parsování u rozsáhlých datových sad.
+ * Splits the memory-buffered file into newline-aligned chunks processed concurrently
+ * using std::thread::hardware_concurrency(), accelerating ingestion of massive datasets.
  *
- * @param path Cesta k CSV souboru obsahujícímu měření.
+ * @param path Filesystem path to the measurements CSV.
  *
- * @return std::vector<Measurement> Vektor naparsovaných měření. V případě selhání vrací prázdný vektor.
+ * @return std::vector<Measurement> Vector of parsed measurements. Returns empty vector on failure.
  */
 std::vector<Measurement> loadMeasurementParallel(const std::string &path);
 
 /**
- * @brief Načte seznam meteorologických stanic ze zadaného CSV souboru s využitím více vláken.
+ * @brief Concurrently ingests meteorological station records from a CSV file across worker threads.
  *
- * @param path Cesta k CSV souboru obsahujícímu data o stanicích.
+ * @param path Filesystem path to the stations CSV.
  *
- * @return std::vector<Station> Vektor naparsovaných stanic. V případě selhání vrací prázdný vektor.
+ * @return std::vector<Station> Vector of parsed stations. Returns empty vector on failure.
  */
 std::vector<Station> loadStationsParallel(const std::string &path);

@@ -5,34 +5,34 @@
 /**
  * @file Config.h
  *
- * @brief Globální konfigurační konstanty aplikace.
+ * @brief Global application configuration constants.
  *
- * Obsahuje geografické hranice, mapovací konstanty pro SVG vizualizace
- * a relativní cesty k výstupním adresářům a souborům.
+ * Defines geographic coordinate bounds, projection parameters for SVG
+ * vector visualizations, and paths for output directories and anomaly reports.
  */
 namespace Config {
-    // Hranice mapy
+    // Geographic Projection Bounds (Czech Republic coordinate bounding box)
     constexpr double LAT_MAX = 51.03806105663445;
     constexpr double LAT_MIN = 48.521003814763994;
     constexpr double LON_MIN = 12.102209054269062;
     constexpr double LON_MAX = 18.866923511078615;
 
-    // Konfigurace ořezu
-    constexpr double PIXEL_X_MIN = 35.0;    // Skutečný začátek mapy zleva (posun)
-    constexpr double PIXEL_X_MAX = 1175.0;  // Pravý okraj mapy v pixelech
-    constexpr double PIXEL_Y_MIN = 25.0;    // Skutečný začátek mapy shora (posun)
-    constexpr double PIXEL_Y_MAX = 585.0;   // Spodní okraj mapy v pixelech
+    // Canvas Calibration Configuration
+    constexpr double PIXEL_X_MIN = 35.0;    // Left margin offset
+    constexpr double PIXEL_X_MAX = 1175.0;  // Right canvas boundary in pixels
+    constexpr double PIXEL_Y_MIN = 25.0;    // Top margin offset
+    constexpr double PIXEL_Y_MAX = 585.0;   // Bottom canvas boundary in pixels
 
-    // Rozměry SVG plátna
+    // SVG Canvas Dimensions
     constexpr int SVG_WIDTH = 1412;
     constexpr int SVG_HEIGHT = 809;
 
-    // --- Vizuální nastavení ---
-    // Velikost vykresleného bodu reprezentujícího meteorologickou stanici
+    // Visual Settings
+    // Radius of rendered circle representing a meteorological station
     constexpr int STATION_RADIUS = 5;
 
-    // --- Cesty k souborům a adresářům ---
-    // Relativní cesta k podkladové slepé mapě, na kterou se kreslí data
+    // File and Directory Paths
+    // Relative path to base map template
     constexpr const char *MAP_SVG_PATH = "czmap.svg";
     constexpr const char *OUTPUT_DIR_BASE = "maps/";
 
@@ -40,6 +40,6 @@ namespace Config {
     inline const std::string OUTPUT_SERIAL_MAPS_DIR = OUTPUT_DIR + "serial_maps/";
     inline const std::string OUTPUT_PARALLEL_MAPS_DIR = OUTPUT_DIR + "parallel_maps/";
 
-    inline const std::string OUTPUT_SERIAL_FLUCTUATION_DIR = OUTPUT_DIR + "serial_vykyvy.csv";
-    inline const std::string OUTPUT_PARALLEL_FLUCTUATION_DIR = OUTPUT_DIR + "parallel_vykyvy.csv";
+    inline const std::string OUTPUT_SERIAL_FLUCTUATION_DIR = OUTPUT_DIR + "serial_anomalies.csv";
+    inline const std::string OUTPUT_PARALLEL_FLUCTUATION_DIR = OUTPUT_DIR + "parallel_anomalies.csv";
 }

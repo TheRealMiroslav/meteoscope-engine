@@ -1,66 +1,90 @@
-# Prerequisites
-*.d
+# ==============================================================================
+# Build Artifacts & CMake Directories
+# ==============================================================================
+build/
+bin/
+out/
+target/
+dist/
+cmake-build-*/
+out/build/
+x64/
+x86/
+[Dd]ebug/
+[Rr]elease/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# CMake
+# CMake Artifacts
 CMakeCache.txt
-CMakeFiles
-CMakeScripts
-Testing
+CMakeFiles/
+CMakeScripts/
+Testing/
 Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
-_deps
+_deps/
 
-# Build directories
-build/
-out/
-bin/
-cmake-build-*/
-out/build/
+# Compiled Object Files & Precompiled Headers
+*.o
+*.obj
+*.slo
+*.lo
+*.d
+*.gch
+*.pch
 
-# IDEs
+# Compiled Libraries
+*.so
+*.dylib
+*.dll
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables & Debug Symbols
+*.exe
+*.out
+*.app
+*.pdb
+*.ilk
+*.exp
+
+# ==============================================================================
+# IDEs & Editors
+# ==============================================================================
+# JetBrains CLion / IntelliJ
 .idea/
-.vscode/
+cmake-build-debug/
+cmake-build-release/
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Microsoft Visual Studio
 .vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
-*.sw?
 
-# OS generated files
+# Vim / Emacs
+*.sw?
+*~
+.#*
+
+# ==============================================================================
+# Operating System Artifacts
+# ==============================================================================
 .DS_Store
 .DS_Store?
 ._*
@@ -68,8 +92,21 @@ out/build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+[Dd]esktop.ini
 
-# Other
-node_modules/
-venv/
+# ==============================================================================
+# Environment, Sensitive Files & Logs
+# ==============================================================================
 .env
+.env.*
+!.env.example
+*.log
+*.tmp
+
+# ==============================================================================
+# Runtime Outputs & Generated Data
+# ==============================================================================
+# Generated maps and CSV fluctuation reports (preserve root template czmap.svg)
+maps/
+serial_vykyvy.csv
+parallel_vykyvy.csv

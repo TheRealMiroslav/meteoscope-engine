@@ -8,38 +8,34 @@
 #include <unordered_map>
 
 /**
- * @brief Sekvenčně vypočítá měsíční průměry teplot pro zadané stanice.
+ * @brief Sequentially computes monthly temperature averages for specified stations.
  *
- * @param groupedMeasurements Naměřená data seskupená podle stanice, roku a měsíce.
- * @param passedStationIds Seznam ID stanic, pro které se mají průměry počítat.
+ * @param groupedMeasurements Raw observations grouped by station, year, and month.
+ * @param passedStationIds List of validated station IDs to process.
  *
- * @return std::map<int, std::map<int, std::map<int, double>>> Vnořená mapa obsahující
- * výsledné průměry ve formátu [ID stanice -> [Rok -> [Měsíc -> Průměrná teplota]]].
+ * @return std::map<int, std::map<int, std::map<int, double>>> Nested map of
+ * calculated averages: [station ID -> [year -> [month -> mean temperature]]].
  */
 std::map<int, std::map<int, std::map<int, double> > > computeMonthlyAverages(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
     const std::vector<int> &passedStationIds) {
-    // Použití unordered_set pro vyhledávání povolených stanic v čase O(1)
     const std::unordered_set<int> allowedStations(passedStationIds.begin(), passedStationIds.end());
 
     std::map<int, std::map<int, std::map<int, double> > > results;
 
     for (auto const &[stationId, yearMap]: groupedMeasurements) {
-        // Ignorování stanic, které nebyly vyžádány ke zpracování
         if (!allowedStations.contains(stationId)) continue;
 
         for (auto const &[year, measurements]: yearMap) {
-            // Indexy 1-12 odpovídají měsícům (index 0 se ignoruje)
-            // first = suma hodnot, second = počet měření
+            // Indices 1-12 correspond to months (index 0 unused)
+            // first = sum of values, second = count of readings
             std::array<std::pair<double, int>, 13> statsPerMonth{};
 
-            // Agregace sum a počtů v jediném průchodu lineárně
             for (const auto &measurement: measurements) {
                 statsPerMonth[measurement.month].first += measurement.value;
                 statsPerMonth[measurement.month].second += 1;
             }
 
-            // Výpočet finálního průměru pro měsíce, které mají data
             for (int month = 1; month <= 12; ++month) {
                 if (statsPerMonth[month].second > 0) {
                     const double average = statsPerMonth[month].first / statsPerMonth[month].second;
@@ -53,25 +49,23 @@ std::map<int, std::map<int, std::map<int, double> > > computeMonthlyAverages(
 }
 
 /**
- * @brief Paralelně vypočítá měsíční průměry teplot pro zadané stanice.
+ * @brief Concurrently computes monthly temperature averages for specified stations.
  *
- * Efektivnější varianta pro velká množství dat. Výpočet je paralelizován na úrovni
- * jednotlivých stanic, přičemž každé vlákno zpracovává všechny roky a měsíce dané stanice.
+ * High-performance multithreaded calculation distributed at station level via std::execution::par.
+ * Each worker operates on station-local map accumulators (lock-free).
  *
- * @param groupedMeasurements Naměřená data seskupená podle stanice, roku a měsíce.
- * @param passedStationIds Seznam ID stanic, pro které se mají průměry počítat.
+ * @param groupedMeasurements Raw observations grouped by station, year, and month.
+ * @param passedStationIds List of validated station IDs to process.
  *
- * @return std::map<int, std::map<int, std::map<int, double>>> Vnořená mapa obsahující
- * výsledné průměry ve formátu [ID stanice -> [Rok -> [Měsíc -> Průměrná teplota]]].
+ * @return std::map<int, std::map<int, std::map<int, double>>> Nested map of
+ * calculated averages: [station ID -> [year -> [month -> mean temperature]]].
  */
 std::map<int, std::map<int, std::map<int, double> > > computeMonthlyAveragesParallel(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
     const std::vector<int> &passedStationIds) {
-    // Příprava indexů pro paralelní spuštění (std::for_each potřebuje iterátory)
     std::vector<int> indices(passedStationIds.size());
     std::iota(indices.begin(), indices.end(), 0);
 
-    // Definice pomocného typu pro uchování mezivýsledků každého vlákna (vyhnutí se lockování sdílené mapy)
     using StationResult = std::map<int, std::map<int, double> >;
     std::vector<StationResult> threadResult(passedStationIds.size());
 
@@ -96,11 +90,10 @@ std::map<int, std::map<int, std::map<int, double> > > computeMonthlyAveragesPara
                 }
             }
         }
-        // Uložení vypočítaných dat stanice na pozici odpovídající indexu vlákna (bezpečný move semantics)
         threadResult[i] = std::move(localStationResult);
     });
 
-    // Sekvenční sestavení finálního výsledku z dat předpřipravených vlákny
+    // Sequential reduction into master map
     std::map<int, std::map<int, std::map<int, double> > > finalResults;
     for (size_t i = 0; i < passedStationIds.size(); i++) {
         finalResults[passedStationIds[i]] = std::move(threadResult[i]);

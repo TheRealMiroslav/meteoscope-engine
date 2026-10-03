@@ -9,54 +9,51 @@
 #include <numeric>
 
 /**
- * @brief Sériová filtrace stanic na základě minimálních požadavků na data.
+ * @brief Sequentially filters stations based on minimum observation threshold criteria.
  *
- * Funkce vyřadí stanice, které nemají dostatečnou historii měření (nepřerušená řada let)
- * nebo nemají dostatečnou hustotu měření v zaznamenaných letech.
+ * Discards stations lacking adequate observation continuity (unbroken series of years)
+ * or density (minimum average readings per active year).
  *
- * @param groupedMeasurements Hierarchická struktura dat: ID stanice -> Rok -> Seznam měření.
- * @param minYears Minimální počet po sobě jdoucích let měření nutný pro zachování stanice.
- * @param minPerYear Minimální průměrný počet měření na jeden zaznamenaný rok.
+ * @param groupedMeasurements Hierarchical structure: station ID -> year -> measurements list.
+ * @param minYears Minimum consecutive observation years required to retain station.
+ * @param minPerYear Minimum average observation count per recorded year.
  *
- * @return std::vector<int> Vektor ID stanic, které splnily kritéria filtrace.
+ * @return std::vector<int> Vector of station IDs that met the quality criteria.
  */
 std::vector<int> filterStationsSerial(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
     const int minYears,
     const int minPerYear) {
     std::vector<int> result;
-    // Heuristická předalokace paměti (odhadujeme, že projde cca 75 % stanic)
-    // pro minimalizaci realokací během přidávání do vektoru.
+    // Heuristic capacity pre-allocation (~75% retention rate)
     result.reserve((groupedMeasurements.size() / 4) * 3);
 
     for (const auto &[stationId, yearMap]: groupedMeasurements) {
         if (yearMap.empty())
             continue;
 
-        // Krok 1: Kontrola hustoty měření
-        // Spočítáme celkový počet měření pro danou stanici napříč všemi roky
+        // Step 1: Measurement density check
         size_t totalMeasurements = 0;
         for (const auto &ms: yearMap | std::views::values) {
             totalMeasurements += ms.size();
         }
 
-        // Pokud je průměrný počet měření na aktivní rok menší než limit, stanici vyřadíme
         if (static_cast<int>(totalMeasurements / yearMap.size()) < minPerYear)
             continue;
 
-        // Krok 2: Kontrola souvislosti (po sobě jdoucí roky)
+        // Step 2: Temporal continuity check (consecutive years)
         int lastYear = 0;
         int counter = 0;
         bool passedYears = false;
 
-        // Protože yearMap je std::map, iterace přes klíče je zaručeně chronologická (vzestupně)
+        // Iteration over std::map keys is inherently chronological (ascending)
         for (const auto &year: yearMap | std::views::keys) {
             counter = (year == lastYear + 1) ? counter + 1 : 1;
             lastYear = year;
 
             if (counter >= minYears) {
                 passedYears = true;
-                break; // Limit splněn, můžeme přeskočit kontrolu zbývajících let
+                break;
             }
         }
 
@@ -69,52 +66,50 @@ std::vector<int> filterStationsSerial(
 }
 
 /**
- * @brief Paralelní filtrace stanic na základě minimálních požadavků na data.
+ * @brief Concurrently filters stations based on minimum observation threshold criteria.
  *
- * Vícevláknová alternativa k `filterStationsSerial`. Využívá `std::execution::par`
- * a lock-free strategii zápisu výsledků pomocí pomocného boolean (int) vektoru.
+ * Multithreaded alternative to filterStationsSerial leveraging std::execution::par
+ * and lock-free thread-indexed slot assignment.
  *
- * @param groupedMeasurements Hierarchická struktura dat: ID stanice -> Rok -> Seznam měření.
- * @param minYears Minimální počet po sobě jdoucích let měření nutný pro zachování stanice.
- * @param minPerYear Minimální průměrný počet měření na jeden zaznamenaný rok.
+ * @param groupedMeasurements Hierarchical structure: station ID -> year -> measurements list.
+ * @param minYears Minimum consecutive observation years required to retain station.
+ * @param minPerYear Minimum average observation count per recorded year.
  *
- * @return std::vector<int> Vektor ID stanic, které splnily kritéria filtrace.
+ * @return std::vector<int> Vector of station IDs that met the quality criteria.
  */
 std::vector<int> filterStationsParallel(
     const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
     const int minYears,
     const int minPerYear) {
-    // Extrakce ID všech dostupných stanic pro rovnoměrné rozdělení práce mezi vlákna
     std::vector<int> stationIds;
     stationIds.reserve(groupedMeasurements.size());
     for (const auto &id: groupedMeasurements | std::views::keys) {
         stationIds.push_back(id);
     }
 
-    // Indikační pole pro výsledky filtrace.
-    // Lock-free přístup: každé vlákno bude zapisovat pouze na "svůj" vyhrazený index.
+    // Indicator array for lock-free recording
     std::vector<int> passed(stationIds.size(), 0);
     std::vector<size_t> indices(stationIds.size());
     std::iota(indices.begin(), indices.end(), 0);
 
-    // Paralelní vyhodnocení podmínek pro každou stanici
+    // Concurrent quality evaluation per station
     std::for_each(std::execution::par, indices.begin(), indices.end(), [&](const size_t i) {
         const int stationId = stationIds[i];
         const auto &yearMap = groupedMeasurements.at(stationId);
 
         if (yearMap.empty()) return;
 
-        // Krok 1: Kontrola hustoty měření (lokální pro dané vlákno)
+        // Step 1: Measurement density check
         size_t totalMeasurements = 0;
         for (const auto &ms: yearMap | std::views::values) {
             totalMeasurements += ms.size();
         }
 
         if (static_cast<int>(totalMeasurements / yearMap.size()) < minPerYear) {
-            return; // Filtrem neprošlo, ve vektoru 'passed' zůstává 0
+            return;
         }
 
-        // Krok 2: Kontrola kontinuity měření
+        // Step 2: Temporal continuity check
         int lastYear = 0;
         int counter = 0;
         bool passedYears = false;
@@ -130,11 +125,11 @@ std::vector<int> filterStationsParallel(
         }
 
         if (passedYears) {
-            passed[i] = 1; // Zápis výsledku (bez nutnosti std::mutex díky izolovaným indexům)
+            passed[i] = 1; // Thread writes only to its dedicated slot (lock-free)
         }
     });
 
-    // Sekvenční redukce výsledků: shromáždění ID stanic, které dostaly příznak 1
+    // Sequential reduction: collect IDs that passed criteria
     std::vector<int> result;
     result.reserve((stationIds.size() / 4) * 3);
 

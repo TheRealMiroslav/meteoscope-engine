@@ -5,10 +5,10 @@
 /**
  * @file Timer.h
  *
- * @brief Pomocná třída pro vysoce přesné měření času provádění kódu.
+ * @brief High-resolution benchmarking timer.
  *
- * Využívá std::chrono::high_resolution_clock pro přesné profilování
- * sériových a paralelních algoritmů.
+ * Employs std::chrono::high_resolution_clock for precision profiling
+ * across serial and multi-threaded algorithm stages.
  */
 class Timer {
 private:
@@ -18,14 +18,14 @@ private:
 
 public:
     /**
-     * @brief Konstruktor, který automaticky spustí odpočet.
+     * @brief Constructs the timer and begins measurement immediately.
      */
     Timer() {
         start();
     }
 
     /**
-     * @brief (Znovu)spustí nebo zresetuje časovač.
+     * @brief Starts or resets the timer to current timestamp.
      */
     void start() {
         start_time = std::chrono::high_resolution_clock::now();
@@ -33,7 +33,7 @@ public:
     }
 
     /**
-     * @brief Zastaví časovač a uloží koncový čas.
+     * @brief Stops the timer and records stop timestamp.
      */
     void stop() {
         stop_time = std::chrono::high_resolution_clock::now();
@@ -41,12 +41,12 @@ public:
     }
 
     /**
-     * @brief Vrací uplynulý čas v sekundách.
+     * @brief Computes elapsed duration in seconds.
      *
-     * Pokud časovač stále běží, vrací čas od spuštění do aktuálního okamžiku.
-     * Pokud byl zastaven, vrací rozdíl mezi startem a zastavením.
+     * If the timer is active, measures up to the current instant.
+     * If stopped, returns duration between start and stop points.
      *
-     * @return Uplynulý čas v sekundách (desetinné číslo).
+     * @return Elapsed time in seconds as floating-point value.
      */
     [[nodiscard]] double elapsedSeconds() const {
         const auto end_time = running ? std::chrono::high_resolution_clock::now() : stop_time;
@@ -55,9 +55,9 @@ public:
     }
 
     /**
-     * @brief Vrací uplynulý čas v milisekundách.
+     * @brief Computes elapsed duration in milliseconds.
      *
-     * @return Uplynulý čas v milisekundách (desetinné číslo).
+     * @return Elapsed time in milliseconds as floating-point value.
      */
     [[nodiscard]] double elapsedMilliseconds() const {
         return elapsedSeconds() * 1000.0;
