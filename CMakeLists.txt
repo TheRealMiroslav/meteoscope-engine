@@ -38,3 +38,21 @@ add_executable(meteoscope
 )
 
 target_include_directories(meteoscope PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+find_package(Threads REQUIRED)
+target_link_libraries(meteoscope PRIVATE Threads::Threads)
+
+# In GCC/Clang on Linux, C++20 Parallel STL algorithms require Intel oneTBB
+if (NOT MSVC)
+    find_package(TBB CONFIG QUIET)
+    if (TARGET TBB::tbb)
+        target_link_libraries(meteoscope PRIVATE TBB::tbb)
+    else()
+        find_library(TBB_LIBRARY NAMES tbb)
+        if (TBB_LIBRARY)
+            target_link_libraries(meteoscope PRIVATE ${TBB_LIBRARY})
+        else()
+            target_link_libraries(meteoscope PRIVATE tbb)
+        endif()
+    endif()
+endif()

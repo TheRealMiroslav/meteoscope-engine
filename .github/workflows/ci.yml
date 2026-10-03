@@ -84,19 +84,12 @@ jobs:
       - name: Verify CLI Execution (Linux)
         if: runner.os == 'Linux'
         run: |
-          # The binary expects arguments; without args it prints usage and exits with error code.
-          # We verify that the executable launches and outputs the expected usage syntax.
-          ./build/meteoscope 2>&1 | grep "Usage:" || exit 1
+          ./build/meteoscope --help
 
       - name: Verify CLI Execution (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
         run: |
-          $output = (& .\build\${{ matrix.build_type }}\meteoscope.exe 2>&1) | Out-String
-          if ($output -notmatch "Usage:") {
-            Write-Error "CLI smoke test failed: Expected usage banner not found"
-            exit 1
-          }
+          .\build\${{ matrix.build_type }}\meteoscope.exe --help
 
   # ============================================================================
   # Stage 3: Security & Vulnerability Scan
@@ -109,7 +102,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Trivy Vulnerability & Secret Scanner
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'

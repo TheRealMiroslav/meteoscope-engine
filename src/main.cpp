@@ -32,7 +32,7 @@
  *
  * @param argc Number of command-line arguments.
  * @param argv Array of argument strings.
- * @return 0 on success, -1 on argument or runtime error.
+ * @return 0 on success, 1 on argument or runtime error.
  */
 int main(const int argc, char const *argv[]) {
 #ifdef _WIN32
@@ -41,9 +41,20 @@ int main(const int argc, char const *argv[]) {
     SetConsoleCP(CP_UTF8);
 #endif
 
+    if (argc == 2 && (std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")) {
+        std::cout << "MeteoScope Engine - High-Performance Meteorological Analysis Engine\n";
+        std::cout << "Usage: " << argv[0] << " <stations.csv> <measurements.csv> <--serial|--parallel>\n\n";
+        std::cout << "Options:\n";
+        std::cout << "  -h, --help    Show this help message and exit\n";
+        std::cout << "  --serial      Execute single-threaded analysis\n";
+        std::cout << "  --parallel    Execute multi-threaded analysis (Parallel STL / thread pools)\n";
+        return 0;
+    }
+
     if (argc != 4) {
         std::cerr << "Usage: " << argv[0] << " <stations.csv> <measurements.csv> <--serial|--parallel>\n";
-        return -1;
+        std::cerr << "Try '" << argv[0] << " --help' for more information.\n";
+        return 1;
     }
 
     const std::string stationPath = argv[1];
@@ -52,7 +63,7 @@ int main(const int argc, char const *argv[]) {
 
     if (mode != "--serial" && mode != "--parallel") {
         std::cerr << "Error: Invalid mode flag '" << mode << "'. Use --serial or --parallel.\n";
-        return -1;
+        return 1;
     }
 
     std::vector<Station> stations;
@@ -74,13 +85,13 @@ int main(const int argc, char const *argv[]) {
 
     if (stations.empty()) {
         std::cerr << "Error: Failed to load stations from '" << stationPath << "'. File does not exist or is empty.\n";
-        return -1;
+        return 1;
     }
 
     if (measurements.empty()) {
         std::cerr << "Error: Failed to load measurements from '" << measurementsPath
                   << "'. File does not exist or is empty.\n";
-        return -1;
+        return 1;
     }
 
     // Phase 2: Processing (filtering, monthly aggregation, anomaly detection, SVG generation)
