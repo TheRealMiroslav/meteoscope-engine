@@ -22,9 +22,9 @@
  * @return std::map<int, std::map<int, std::map<int, double>>> Nested map of
  * calculated averages: [station ID -> [year -> [month -> mean temperature]]].
  */
-std::map<int, std::map<int, std::map<int, double> > > computeMonthlyAverages(
-    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
-    const std::vector<int> &passedStationIds);
+std::map<int, std::map<int, std::map<int, double>>>
+computeMonthlyAverages(const std::unordered_map<int, std::map<int, std::vector<Measurement>>> &groupedMeasurements,
+                       const std::vector<int> &passedStationIds);
 
 /**
  * @brief Concurrently computes monthly temperature averages for specified stations.
@@ -38,6 +38,6 @@ std::map<int, std::map<int, std::map<int, double> > > computeMonthlyAverages(
  * @return std::map<int, std::map<int, std::map<int, double>>> Nested map of
  * calculated averages: [station ID -> [year -> [month -> mean temperature]]].
  */
-std::map<int, std::map<int, std::map<int, double> > > computeMonthlyAveragesParallel(
-    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
+std::map<int, std::map<int, std::map<int, double>>> computeMonthlyAveragesParallel(
+    const std::unordered_map<int, std::map<int, std::vector<Measurement>>> &groupedMeasurements,
     const std::vector<int> &passedStationIds);

@@ -9,7 +9,7 @@
  * required for SVG vector cartography.
  */
 struct Station {
-    int id;         ///< Unique station identifier.
-    double lat;     ///< Latitude in decimal degrees.
-    double lon;     ///< Longitude in decimal degrees.
+    int id;     ///< Unique station identifier.
+    double lat; ///< Latitude in decimal degrees.
+    double lon; ///< Longitude in decimal degrees.
 };

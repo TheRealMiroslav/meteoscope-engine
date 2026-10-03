@@ -30,7 +30,7 @@ void writeSerialAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std::s
 
     file << "station_id;month;year;diff\n";
 
-    for (const auto &[station_id, month, year, diff]: anomalies) {
+    for (const auto &[station_id, month, year, diff] : anomalies) {
         file << station_id << ";" << month << ";" << year << ";" << diff << "\n";
     }
 
@@ -81,7 +81,7 @@ void writeParallelAnomaliesCsv(const std::vector<Anomaly> &anomalies, const std:
     });
 
     // 4. Sequential flush to disk to preserve atomic file structure
-    for (const auto &line: lines) {
+    for (const auto &line : lines) {
         file << line;
     }
 

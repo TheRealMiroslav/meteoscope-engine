@@ -22,10 +22,9 @@
  *
  * @return std::vector<int> Vector of station IDs that met the quality criteria.
  */
-std::vector<int> filterStationsSerial(
-    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
-    int minYears,
-    int minPerYear);
+std::vector<int>
+filterStationsSerial(const std::unordered_map<int, std::map<int, std::vector<Measurement>>> &groupedMeasurements,
+                     int minYears, int minPerYear);
 
 /**
  * @brief Concurrently filters stations based on minimum observation threshold criteria.
@@ -39,6 +38,6 @@ std::vector<int> filterStationsSerial(
  *
  * @return std::vector<int> Vector of station IDs that met the quality criteria.
  */
-std::vector<int> filterStationsParallel(
-    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
-    int minYears, int minPerYear);
+std::vector<int>
+filterStationsParallel(const std::unordered_map<int, std::map<int, std::vector<Measurement>>> &groupedMeasurements,
+                       int minYears, int minPerYear);

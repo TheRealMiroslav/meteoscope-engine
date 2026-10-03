@@ -20,9 +20,7 @@ public:
     /**
      * @brief Constructs the timer and begins measurement immediately.
      */
-    Timer() {
-        start();
-    }
+    Timer() { start(); }
 
     /**
      * @brief Starts or resets the timer to current timestamp.
@@ -59,7 +57,5 @@ public:
      *
      * @return Elapsed time in milliseconds as floating-point value.
      */
-    [[nodiscard]] double elapsedMilliseconds() const {
-        return elapsedSeconds() * 1000.0;
-    }
+    [[nodiscard]] double elapsedMilliseconds() const { return elapsedSeconds() * 1000.0; }
 };

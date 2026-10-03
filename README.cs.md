@@ -8,7 +8,7 @@
 [![CMake](https://img.shields.io/badge/CMake-3.15+-064F8C?style=for-the-badge&logo=cmake&logoColor=white)](https://cmake.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)](CMakeLists.txt)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)]()
+[![CI Pipeline](https://github.com/TheRealMiroslav/meteoscope-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/TheRealMiroslav/meteoscope-engine/actions/workflows/ci.yml)
 [![Performance](https://img.shields.io/badge/Throughput-61M%2B%20z%C3%A1znam%C5%AF%20za%203.8s-success?style=for-the-badge)](#-v%C3%BDkonnostn%C3%AD-benchmarky)
 
 <p align="center">

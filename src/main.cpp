@@ -78,7 +78,8 @@ int main(const int argc, char const *argv[]) {
     }
 
     if (measurements.empty()) {
-        std::cerr << "Error: Failed to load measurements from '" << measurementsPath << "'. File does not exist or is empty.\n";
+        std::cerr << "Error: Failed to load measurements from '" << measurementsPath
+                  << "'. File does not exist or is empty.\n";
         return -1;
     }
 

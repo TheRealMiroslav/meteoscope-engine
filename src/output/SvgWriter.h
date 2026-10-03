@@ -28,7 +28,7 @@
  * @param outputDir Target directory for generated maps.
  */
 void writeSvgMapsSerial(const std::vector<Station> &filteredStations,
-                        const std::map<int, std::map<int, std::map<int, double> > > &monthlyAverages, double globalMin,
+                        const std::map<int, std::map<int, std::map<int, double>>> &monthlyAverages, double globalMin,
                         double globalMax, const std::string &mapSvgPath, const std::string &outputDir);
 
 /**
@@ -44,9 +44,6 @@ void writeSvgMapsSerial(const std::vector<Station> &filteredStations,
  * @param mapSvgPath Path to base SVG template file.
  * @param outputDir Target directory for generated maps.
  */
-void writeSvgMapsParallel(
-    const std::vector<Station> &filteredStations,
-    const std::map<int, std::map<int, std::map<int, double> > > &monthlyAverages,
-    double globalMin, double globalMax,
-    const std::string &mapSvgPath,
-    const std::string &outputDir);
+void writeSvgMapsParallel(const std::vector<Station> &filteredStations,
+                          const std::map<int, std::map<int, std::map<int, double>>> &monthlyAverages, double globalMin,
+                          double globalMax, const std::string &mapSvgPath, const std::string &outputDir);

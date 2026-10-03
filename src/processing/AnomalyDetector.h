@@ -19,7 +19,7 @@
  *
  * @return std::vector<Anomaly> List of detected anomalies sorted chronologically and by station.
  */
-std::vector<Anomaly> detectAnomalies(const std::map<int, std::map<int, std::map<int, double> > > &averages);
+std::vector<Anomaly> detectAnomalies(const std::map<int, std::map<int, std::map<int, double>>> &averages);
 
 /**
  * @brief Concurrently detects temperature anomalies across all stations.
@@ -30,4 +30,4 @@ std::vector<Anomaly> detectAnomalies(const std::map<int, std::map<int, std::map<
  *
  * @return std::vector<Anomaly> List of detected anomalies sorted chronologically and by station.
  */
-std::vector<Anomaly> detectAnomaliesParallel(const std::map<int, std::map<int, std::map<int, double> > > &averages);
+std::vector<Anomaly> detectAnomaliesParallel(const std::map<int, std::map<int, std::map<int, double>>> &averages);

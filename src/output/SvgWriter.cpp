@@ -27,9 +27,8 @@ namespace fs = std::filesystem;
  *
  * @return double Calculated mean temperature. Returns 0.0 if no observations are available.
  */
-double getStationMonthAverage(
-    const std::map<int, std::map<int, std::map<int, double> > > &averages,
-    const int stationId, const int month) {
+double getStationMonthAverage(const std::map<int, std::map<int, std::map<int, double>>> &averages, const int stationId,
+                              const int month) {
     if (!averages.contains(stationId)) {
         return 0.0;
     }
@@ -37,14 +36,15 @@ double getStationMonthAverage(
     double sum = 0.0;
     int count = 0;
 
-    for (const auto &monthMap: averages.at(stationId) | std::views::values) {
+    for (const auto &monthMap : averages.at(stationId) | std::views::values) {
         if (monthMap.contains(month)) {
             sum += monthMap.at(month);
             count++;
         }
     }
 
-    if (count == 0) return 0.0;
+    if (count == 0)
+        return 0.0;
     return sum / count;
 }
 
@@ -62,7 +62,7 @@ double getStationMonthAverage(
  * @param outputDir Target directory for generated maps.
  */
 void writeSvgMapsSerial(const std::vector<Station> &filteredStations,
-                        const std::map<int, std::map<int, std::map<int, double> > > &monthlyAverages, double globalMin,
+                        const std::map<int, std::map<int, std::map<int, double>>> &monthlyAverages, double globalMin,
                         double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
     if (!outputDir.empty()) {
         fs::create_directories(outputDir);
@@ -80,10 +80,9 @@ void writeSvgMapsSerial(const std::vector<Station> &filteredStations,
     svgContent = buffer.str();
     fileStream.close();
 
-    constexpr const char *monthNames[] = {
-        "01_january", "02_february", "03_march", "04_april", "05_may", "06_june",
-        "07_july", "08_august", "09_september", "10_october", "11_november", "12_december"
-    };
+    constexpr const char *monthNames[] = {"01_january",   "02_february", "03_march",    "04_april",
+                                          "05_may",       "06_june",     "07_july",     "08_august",
+                                          "09_september", "10_october",  "11_november", "12_december"};
 
     for (int month = 1; month <= 12; month++) {
         std::string monthName = monthNames[month - 1];
@@ -91,16 +90,14 @@ void writeSvgMapsSerial(const std::vector<Station> &filteredStations,
 
         std::ostringstream allCircles;
 
-        for (const auto &station: filteredStations) {
+        for (const auto &station : filteredStations) {
             double avgTemp = getStationMonthAverage(monthlyAverages, station.id, month);
 
             auto [red, green, blue] = GetColor(avgTemp, globalMin, globalMax);
             auto [x, y] = GetCoordinates(station.lat, station.lon);
 
-            allCircles << "<circle cx=\"" << x
-                    << "\" cy=\"" << y
-                    << "\" r=\"" << Config::STATION_RADIUS
-                    << "\" fill=\"rgb(" << red << "," << green << "," << blue << ")\"/>\n";
+            allCircles << "<circle cx=\"" << x << "\" cy=\"" << y << "\" r=\"" << Config::STATION_RADIUS
+                       << "\" fill=\"rgb(" << red << "," << green << "," << blue << ")\"/>\n";
         }
 
         size_t pos = svgMap.rfind("</svg>");
@@ -128,20 +125,16 @@ void writeSvgMapsSerial(const std::vector<Station> &filteredStations,
  * @param mapSvgPath Path to base SVG template file.
  * @param outputDir Target directory for generated maps.
  */
-void writeSvgMapsParallel(
-    const std::vector<Station> &filteredStations,
-    const std::map<int, std::map<int, std::map<int, double> > > &monthlyAverages,
-    double globalMin, double globalMax,
-    const std::string &mapSvgPath,
-    const std::string &outputDir) {
+void writeSvgMapsParallel(const std::vector<Station> &filteredStations,
+                          const std::map<int, std::map<int, std::map<int, double>>> &monthlyAverages, double globalMin,
+                          double globalMax, const std::string &mapSvgPath, const std::string &outputDir) {
     if (!outputDir.empty()) {
         fs::create_directories(outputDir);
     }
 
-    constexpr const char *monthNames[] = {
-        "01_january", "02_february", "03_march", "04_april", "05_may", "06_june",
-        "07_july", "08_august", "09_september", "10_october", "11_november", "12_december"
-    };
+    constexpr const char *monthNames[] = {"01_january",   "02_february", "03_march",    "04_april",
+                                          "05_may",       "06_june",     "07_july",     "08_august",
+                                          "09_september", "10_october",  "11_november", "12_december"};
 
     std::ifstream fileStream(mapSvgPath);
     if (!fileStream.is_open()) {
@@ -153,7 +146,8 @@ void writeSvgMapsParallel(
     std::string templateStr = buffer.str();
 
     size_t insertPos = templateStr.rfind("</svg>");
-    if (insertPos == std::string::npos) insertPos = templateStr.length();
+    if (insertPos == std::string::npos)
+        insertPos = templateStr.length();
 
     std::string svgHeader = templateStr.substr(0, insertPos);
     std::string svgFooter = templateStr.substr(insertPos);
@@ -163,14 +157,15 @@ void writeSvgMapsParallel(
     std::for_each(std::execution::par, months.begin(), months.end(), [&](int month) {
         std::ostringstream allCircles;
 
-        for (const auto &[id, lat, lon]: filteredStations) {
+        for (const auto &[id, lat, lon] : filteredStations) {
             auto it = monthlyAverages.find(id);
-            if (it == monthlyAverages.end()) continue;
+            if (it == monthlyAverages.end())
+                continue;
 
             double sum = 0.0;
             int count = 0;
 
-            for (const auto &monthMap: it->second | std::views::values) {
+            for (const auto &monthMap : it->second | std::views::values) {
                 auto mIt = monthMap.find(month);
 
                 if (mIt != monthMap.end()) {
@@ -184,10 +179,8 @@ void writeSvgMapsParallel(
                 const auto [r, g, b] = GetColor(avg, globalMin, globalMax);
                 auto [cx, cy] = GetCoordinates(lat, lon);
 
-                allCircles << "<circle cx=\"" << cx
-                        << "\" cy=\"" << cy
-                        << "\" r=\"" << Config::STATION_RADIUS
-                        << "\" fill=\"rgb(" << r << "," << g << "," << b << ")\"/>\n";
+                allCircles << "<circle cx=\"" << cx << "\" cy=\"" << cy << "\" r=\"" << Config::STATION_RADIUS
+                           << "\" fill=\"rgb(" << r << "," << g << "," << b << ")\"/>\n";
             }
         }
 

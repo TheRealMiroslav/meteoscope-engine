@@ -20,21 +20,20 @@
  *
  * @return std::vector<int> Vector of station IDs that met the quality criteria.
  */
-std::vector<int> filterStationsSerial(
-    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
-    const int minYears,
-    const int minPerYear) {
+std::vector<int>
+filterStationsSerial(const std::unordered_map<int, std::map<int, std::vector<Measurement>>> &groupedMeasurements,
+                     const int minYears, const int minPerYear) {
     std::vector<int> result;
     // Heuristic capacity pre-allocation (~75% retention rate)
     result.reserve((groupedMeasurements.size() / 4) * 3);
 
-    for (const auto &[stationId, yearMap]: groupedMeasurements) {
+    for (const auto &[stationId, yearMap] : groupedMeasurements) {
         if (yearMap.empty())
             continue;
 
         // Step 1: Measurement density check
         size_t totalMeasurements = 0;
-        for (const auto &ms: yearMap | std::views::values) {
+        for (const auto &ms : yearMap | std::views::values) {
             totalMeasurements += ms.size();
         }
 
@@ -47,7 +46,7 @@ std::vector<int> filterStationsSerial(
         bool passedYears = false;
 
         // Iteration over std::map keys is inherently chronological (ascending)
-        for (const auto &year: yearMap | std::views::keys) {
+        for (const auto &year : yearMap | std::views::keys) {
             counter = (year == lastYear + 1) ? counter + 1 : 1;
             lastYear = year;
 
@@ -77,13 +76,12 @@ std::vector<int> filterStationsSerial(
  *
  * @return std::vector<int> Vector of station IDs that met the quality criteria.
  */
-std::vector<int> filterStationsParallel(
-    const std::unordered_map<int, std::map<int, std::vector<Measurement> > > &groupedMeasurements,
-    const int minYears,
-    const int minPerYear) {
+std::vector<int>
+filterStationsParallel(const std::unordered_map<int, std::map<int, std::vector<Measurement>>> &groupedMeasurements,
+                       const int minYears, const int minPerYear) {
     std::vector<int> stationIds;
     stationIds.reserve(groupedMeasurements.size());
-    for (const auto &id: groupedMeasurements | std::views::keys) {
+    for (const auto &id : groupedMeasurements | std::views::keys) {
         stationIds.push_back(id);
     }
 
@@ -97,11 +95,12 @@ std::vector<int> filterStationsParallel(
         const int stationId = stationIds[i];
         const auto &yearMap = groupedMeasurements.at(stationId);
 
-        if (yearMap.empty()) return;
+        if (yearMap.empty())
+            return;
 
         // Step 1: Measurement density check
         size_t totalMeasurements = 0;
-        for (const auto &ms: yearMap | std::views::values) {
+        for (const auto &ms : yearMap | std::views::values) {
             totalMeasurements += ms.size();
         }
 
@@ -114,7 +113,7 @@ std::vector<int> filterStationsParallel(
         int counter = 0;
         bool passedYears = false;
 
-        for (const auto &year: yearMap | std::views::keys) {
+        for (const auto &year : yearMap | std::views::keys) {
             counter = (year == lastYear + 1) ? counter + 1 : 1;
             lastYear = year;
 
